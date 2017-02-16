@@ -2,10 +2,6 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <BuildRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), build.root))</BuildRoot>
-  </PropertyGroup>
-  <Import Project="$(BuildRoot)\build\props\buildoutput.props" />
-  <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
@@ -26,8 +22,11 @@
     <LangVersion Condition=" '$(VisualStudioVersion)' != '10.0' ">4</LangVersion>
     <FileAlignment>512</FileAlignment>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <OutputPath>$(OutputPath)Plugins\</OutputPath>
-    <PluginLayoutPath>$(BasePluginLayoutPath)Plugins\</PluginLayoutPath>
+    <BuildRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), build.root))</BuildRoot>
+  </PropertyGroup>
+  <Import Project="$(BuildRoot)\build\props\buildoutput.props" />
+  <PropertyGroup>
+    <PluginLayoutPath>$(BasePluginLayoutPath)Unity\</PluginLayoutPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -79,19 +78,14 @@
   <Target Name="LayoutPlugin" AfterTargets="Build">
     <Message Importance="high" Text="Copying binaries to plugin layout path $(PluginLayoutPath)" />
     <MakeDir Directories="$(PluginLayoutPath)" />
-    <Exec Command="xcopy /y /d $(OutDir)*.pdb $(PluginLayoutPath)" />
     <Exec Command="xcopy /y /d $(OutDir)*.dll $(PluginLayoutPath)" />
   </Target>
-  <PropertyGroup>
-    <PostBuildEvent>REM Copies libs into Unity folder if this is a git submodule of that project
-SET "pluginRoot=$(SolutionDir)..\..\..\Assets\Xbox Live"
-IF NOT EXIST "%25pluginRoot%25" GOTO DONE
-set "dst=%25pluginRoot%25\Libs\Unity"
-IF NOT EXIST "%25dst%25" mkdir "%25dst%25"
-REM SET "src=..\..\Layout\$(ConfigurationName)\Plugins\"
-SET "src=$(TargetDir)"
-echo Copying binaries from %25src%25 to Unity Plugin path %25dst%25
-copy "%25src%25" "%25dst%25"
-:DONE</PostBuildEvent>
-  </PropertyGroup>
+  <Target Name="CopyToUnityLibs" Condition="Exists('$(SolutionDir)..\..\..\Assets\Xbox Live')" AfterTargets="LayoutPlugin">
+    <Message Text="Copying binaries to Unity Libs folder $(SolutionDir)..\..\..\Assets\Xbox Live\libs" />
+    <MakeDir Directories="$(SolutionDir)..\..\..\Assets\Xbox Live\libs" />
+    <ItemGroup>
+      <PluginFiles Include="$(PluginLayoutPath)\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(SolutionDir)..\..\..\Assets\Xbox Live\libs\Unity" />
+  </Target>
 </Project>
