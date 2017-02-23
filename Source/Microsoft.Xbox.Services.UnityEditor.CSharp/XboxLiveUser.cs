@@ -6,15 +6,17 @@ namespace Microsoft.Xbox.Services
     using global::System;
     using global::System.Text;
     using global::System.Threading.Tasks;
+
     using Microsoft.Xbox.Services.System;
 
     public partial class XboxLiveUser
     {
-        private UserImpl mockUserImpl;
+        private readonly UserImpl mockUserImpl;
+
         public XboxLiveUser()
         {
-            userImpl = new UserImpl();
-            mockUserImpl = (UserImpl)userImpl;
+            this.userImpl = new UserImpl();
+            this.mockUserImpl = (UserImpl)this.userImpl;
         }
 
         public Task<SignInResult> SignInAsync()
@@ -22,7 +24,7 @@ namespace Microsoft.Xbox.Services
             if (XboxLiveContext.UseMockServices)
             {
                 this.mockUserImpl.IsSignedIn = true;
-                this.mockUserImpl.Gamertag = "2 dev 7727";
+                this.mockUserImpl.Gamertag = "Fake User";
                 this.mockUserImpl.XboxUserId = "123456789";
                 return Task.FromResult(new SignInResult(SignInStatus.Success));
             }
@@ -35,7 +37,7 @@ namespace Microsoft.Xbox.Services
             if (XboxLiveContext.UseMockServices)
             {
                 this.mockUserImpl.IsSignedIn = true;
-                this.mockUserImpl.Gamertag = "2 dev 7727";
+                this.mockUserImpl.Gamertag = "Fake User";
                 this.mockUserImpl.XboxUserId = "123456789";
                 return Task.FromResult(new SignInResult(SignInStatus.Success));
             }
@@ -48,7 +50,7 @@ namespace Microsoft.Xbox.Services
             if (XboxLiveContext.UseMockServices)
             {
                 this.mockUserImpl.IsSignedIn = true;
-                this.mockUserImpl.Gamertag = "2 dev 7727";
+                this.mockUserImpl.Gamertag = "Fake User";
                 this.mockUserImpl.XboxUserId = "123456789";
                 return Task.FromResult(new SignInResult(SignInStatus.Success));
             }
@@ -76,14 +78,13 @@ namespace Microsoft.Xbox.Services
                 {
                     Gamertag = this.Gamertag,
                     XboxUserId = this.XboxUserId,
-                    XboxUserHash = "Foo",
-                    Token = "Bar",
-                    Signature = "==",
+                    XboxUserHash = "",
+                    Token = "",
+                    Signature = "",
                 });
             }
 
             throw new NotImplementedException();
         }
-        
     }
 }
