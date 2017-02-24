@@ -52,8 +52,6 @@ namespace Microsoft.Xbox.Services.UnitTests
                 timer.Fire();
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(1));
-
             var result = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(2)));
             if (result != tcs.Task)
             {
@@ -63,6 +61,38 @@ namespace Microsoft.Xbox.Services.UnitTests
 
             Assert.IsTrue(tcs.Task.Result);
             Assert.AreEqual(1, count);
+        }
+
+        [TestMethod]
+        public async Task QueuedThrottledCallback()
+        {
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
+
+            int count = 0;
+            CallBufferTimer timer = new CallBufferTimer(TimeSpan.FromMilliseconds(500));
+            timer.TimerCompleteEvent += (sender, o) =>
+            {
+                Interlocked.Increment(ref count);
+                tcs.SetResult(true);
+            };
+
+            for (int i = 0; i < 10; i++)
+            {
+                timer.Fire();
+            }
+
+            // The timer should be called at least twice.
+            await Task.Delay(1000);
+
+            var result = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(2)));
+            if (result != tcs.Task)
+            {
+                // This means the delay task completed.
+                Assert.Fail("Timer was never called.");
+            }
+
+            Assert.IsTrue(tcs.Task.Result);
+            Assert.IsTrue(count > 1);
         }
     }
 }
