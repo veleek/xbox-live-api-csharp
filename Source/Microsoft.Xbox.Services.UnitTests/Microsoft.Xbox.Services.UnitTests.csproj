@@ -54,6 +54,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="CallBufferTimerTests.cs" />
     <Compile Include="Leaderboards\LeaderboardTests.cs" />
     <Compile Include="Social\EventQueueTests.cs" />
     <Compile Include="Social\InternalEventQueueTests.cs" />
