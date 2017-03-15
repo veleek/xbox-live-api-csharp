@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
-using Newtonsoft.Json;
 
 namespace Microsoft.Xbox.Services.Leaderboard
 {
@@ -9,17 +7,16 @@ namespace Microsoft.Xbox.Services.Leaderboard
     using global::System.Collections.Generic;
     using global::System.Text;
     using global::System.Threading.Tasks;
-    using Newtonsoft.Json.Linq;
-    using Social.Models;
-    using System;
 
     public class LeaderboardService : ILeaderboardService
     {
+        private const string leaderboardApiContract = "4";
+
         private static readonly Uri leaderboardsBaseUri = new Uri("https://leaderboards.xboxlive.com");
+
         private readonly XboxLiveUser userContext;
         private readonly XboxLiveContextSettings xboxLiveContextSettings;
         private readonly XboxLiveAppConfiguration appConfig;
-        private static string leaderboardAPIContract = "4";
 
         internal LeaderboardService(XboxLiveUser userContext, XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
         {
@@ -30,12 +27,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
         public Task<LeaderboardResult> GetLeaderboardAsync(string statName, LeaderboardQuery query)
         {
-            string xuid = null;
-            if(query.SkipResultToMe)
-            {
-                xuid = userContext.XboxUserId;
-            }
-            return this.GetLeaderboardInternal(userContext.XboxUserId, appConfig.ServiceConfigurationId, statName, null, query, LeaderboardRequestType.Global);
+            return this.GetLeaderboardInternal(this.userContext.XboxUserId, this.appConfig.ServiceConfigurationId, statName, null, query, LeaderboardRequestType.Global);
         }
 
         public Task<LeaderboardResult> GetSocialLeaderboardAsync(string leaderboardName, string socialGroup, LeaderboardQuery query)
@@ -49,7 +41,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
             {
                 socialGroup = "all";
             }
-            return this.GetLeaderboardInternal(userContext.XboxUserId, appConfig.ServiceConfigurationId, leaderboardName, socialGroup, query, LeaderboardRequestType.Social);
+            return this.GetLeaderboardInternal(this.userContext.XboxUserId, this.appConfig.ServiceConfigurationId, leaderboardName, socialGroup, query, LeaderboardRequestType.Social);
         }
 
         internal Task<LeaderboardResult> GetLeaderboardInternal(string xuid, string serviceConfigurationId, string leaderboardName, string socialGroup, LeaderboardQuery query, LeaderboardRequestType leaderboardType)
@@ -59,20 +51,20 @@ namespace Microsoft.Xbox.Services.Leaderboard
             string skipToXboxUserId = null;
             if (query.SkipResultToMe)
             {
-                skipToXboxUserId = userContext.XboxUserId;
+                skipToXboxUserId = this.userContext.XboxUserId;
             }
             if (leaderboardType == LeaderboardRequestType.Social)
             {
-                requestPath  = CreateSocialLeaderboardUrlPath(serviceConfigurationId, leaderboardName, xuid, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
+                requestPath = this.CreateSocialLeaderboardUrlPath(serviceConfigurationId, leaderboardName, xuid, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
             }
             else
             {
-                requestPath = CreateLeaderboardUrlPath(serviceConfigurationId, leaderboardName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
+                requestPath = this.CreateLeaderboardUrlPath(serviceConfigurationId, leaderboardName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
             }
 
-            XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
-            request.ContractVersion = leaderboardAPIContract;
-            return request.GetResponseWithAuth(userContext, HttpCallResponseBodyType.JsonBody)
+            XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(this.xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
+            request.ContractVersion = leaderboardApiContract;
+            return request.GetResponseWithAuth(this.userContext, HttpCallResponseBodyType.JsonBody)
                 .ContinueWith(
                     responseTask =>
                     {
@@ -82,14 +74,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
                             leaderboardRequestType = LeaderboardRequestType.Social;
                         }
                         LeaderboardRequest leaderboardRequest = new LeaderboardRequest(leaderboardRequestType, leaderboardName);
-                        LeaderboardQuery nextQuery = new LeaderboardQuery(query);
-                        nextQuery.StatName = leaderboardName;
-                        nextQuery.SocialGroup = socialGroup;
-                        return this.HandleLeaderboardResponse(leaderboardRequest, responseTask, nextQuery);
+                        return this.HandleLeaderboardResponse(leaderboardRequest, responseTask, query);
                     });
         }
 
-        internal LeaderboardResult HandleLeaderboardResponse(LeaderboardRequest request, Task<XboxLiveHttpResponse> responseTask, LeaderboardQuery nextQuery)
+        internal LeaderboardResult HandleLeaderboardResponse(LeaderboardRequest request, Task<XboxLiveHttpResponse> responseTask, LeaderboardQuery query)
         {
             XboxLiveHttpResponse response = responseTask.Result;
 
@@ -98,7 +87,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
             IList<LeaderboardColumn> columns = new List<LeaderboardColumn>() { lbResponse.LeaderboardInfo.Column };
 
             IList<LeaderboardRow> rows = new List<LeaderboardRow>();
-            foreach(LeaderboardRowResponse row in lbResponse.Rows)
+            foreach (LeaderboardRowResponse row in lbResponse.Rows)
             {
                 LeaderboardRow newRow = new LeaderboardRow()
                 {
@@ -107,7 +96,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
                     Rank = row.Rank,
                     XboxUserId = row.XboxUserId,
                 };
-                if(row.Value != null)
+                if (row.Value != null)
                 {
                     newRow.Values = new List<string>();
                     newRow.Values.Add(row.Value);
@@ -118,15 +107,13 @@ namespace Microsoft.Xbox.Services.Leaderboard
                 }
                 rows.Add(newRow);
             }
+
             if (lbResponse.PagingInfo != null)
             {
-                nextQuery.ContinuationToken = lbResponse.PagingInfo.ContinuationToken;
+                query = new LeaderboardQuery(query, lbResponse.PagingInfo.ContinuationToken);
             }
 
-            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, userContext, xboxLiveContextSettings, appConfig)
-            {
-                NextQuery = nextQuery
-            };
+            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, query);
             return result;
         }
 

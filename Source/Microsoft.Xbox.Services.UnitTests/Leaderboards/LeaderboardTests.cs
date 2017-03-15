@@ -77,9 +77,11 @@ namespace Microsoft.Xbox.Services.UnitTests.Leaderboards
             this.VerifyLeaderboardResult(result, responseJson);
 
             // Testing continuation token with GetNext.
-            LeaderboardQuery lbq = new LeaderboardQuery();
-            lbq.MaxItems = 100;
-            lbq.ContinuationToken = "6";
+            LeaderboardQuery lbq = new LeaderboardQuery
+            {
+                MaxItems = 100,
+                ContinuationToken = "6"
+            };
             LeaderboardResult nextResult = await context.LeaderboardService.GetLeaderboardAsync("Jumps", lbq);
             MockXboxLiveData.MockRequestData mockRequestDataWithContinuationToken = MockXboxLiveData.MockResponses["defaultLeaderboardDataWithContinuationToken"];
             JObject responseJsonWithContinuationToken = JObject.Parse(mockRequestDataWithContinuationToken.Response.ResponseBodyString);

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
 
 namespace Microsoft.Xbox.Services.Leaderboard
 {
@@ -47,7 +46,8 @@ namespace Microsoft.Xbox.Services.Leaderboard
                     Values = row.Value != null ? new List<string> { row.Value } : row.Values
                 }).ToList();
 
-            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, this.userContext, this.xboxLiveContextSettings, this.appConfig);
+            // Create a result with an 'empty' next query so that it won't have paiging.
+            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, new LeaderboardQuery());
             return result;
         }
     }
