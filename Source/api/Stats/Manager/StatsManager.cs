@@ -36,7 +36,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             }
         }
 
-        public static IStatsManager Singleton
+        public static IStatsManager Instance
         {
             get
             {
@@ -275,11 +275,11 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             if (this.userStatContextMap.ContainsKey(userXuid))
             {
                 var statsUserContext = this.userStatContextMap[userXuid];
-                var userSVD = statsUserContext.statsValueDocument;
-                if (userSVD.IsDirty)
+                var userStatDocument = statsUserContext.statsValueDocument;
+                if (userStatDocument.IsDirty)
                 {
-                    userSVD.DoWork();
-                    userSVD.ClearDirtyState();
+                    userStatDocument.DoWork();
+                    userStatDocument.ClearDirtyState();
                     this.FlushToService(statsUserContext);
                 }
             }
@@ -290,7 +290,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             this.CheckUserValid(user);
             this.userStatContextMap[user.XboxUserId].xboxLiveContext.LeaderboardService.GetLeaderboardAsync(statName, query).ContinueWith(responseTask =>
             {
-                ((StatsManager)Singleton).AddEvent(
+                ((StatsManager)Instance).AddEvent(
                     new StatEvent(StatEventType.GetLeaderboardComplete, 
                     user, 
                     responseTask.Exception, 
@@ -304,7 +304,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             this.CheckUserValid(user);
             this.userStatContextMap[user.XboxUserId].xboxLiveContext.LeaderboardService.GetSocialLeaderboardAsync(statName, socialGroup, query).ContinueWith(responseTask =>
             {
-                ((StatsManager)Singleton).AddEvent(
+                ((StatsManager)Instance).AddEvent(
                     new StatEvent(StatEventType.GetLeaderboardComplete,
                     user,
                     responseTask.Exception,
