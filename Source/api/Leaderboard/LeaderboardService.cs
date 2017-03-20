@@ -14,71 +14,45 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
         private static readonly Uri leaderboardsBaseUri = new Uri("https://leaderboards.xboxlive.com");
 
-        private readonly XboxLiveUser userContext;
         private readonly XboxLiveContextSettings xboxLiveContextSettings;
         private readonly XboxLiveAppConfiguration appConfig;
 
-        internal LeaderboardService(XboxLiveUser userContext, XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
+        internal LeaderboardService(XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
         {
-            this.userContext = userContext;
             this.xboxLiveContextSettings = xboxLiveContextSettings;
             this.appConfig = appConfig;
         }
 
-        public Task<LeaderboardResult> GetLeaderboardAsync(string statName, LeaderboardQuery query)
-        {
-            return this.GetLeaderboardInternal(this.userContext.XboxUserId, this.appConfig.ServiceConfigurationId, statName, null, query, LeaderboardRequestType.Global);
-        }
-
-        public Task<LeaderboardResult> GetSocialLeaderboardAsync(string leaderboardName, string socialGroup, LeaderboardQuery query)
-        {
-            if (string.IsNullOrEmpty(socialGroup))
-            {
-                throw new XboxException("socialGroup parameter is required for getting Leaderboard for social group.");
-            }
-
-            if (string.Equals(socialGroup, "people", StringComparison.CurrentCultureIgnoreCase))
-            {
-                socialGroup = "all";
-            }
-            return this.GetLeaderboardInternal(this.userContext.XboxUserId, this.appConfig.ServiceConfigurationId, leaderboardName, socialGroup, query, LeaderboardRequestType.Social);
-        }
-
-        internal Task<LeaderboardResult> GetLeaderboardInternal(string xuid, string serviceConfigurationId, string leaderboardName, string socialGroup, LeaderboardQuery query, LeaderboardRequestType leaderboardType)
+        /// <inheritdoc />
+        public Task<LeaderboardResult> GetLeaderboardAsync(XboxLiveUser user, LeaderboardQuery query)
         {
             string skipToXboxUserId = null;
             if (query.SkipResultToMe)
             {
-                skipToXboxUserId = this.userContext.XboxUserId;
+                skipToXboxUserId = user.XboxUserId;
             }
 
             string requestPath;
-            if (leaderboardType == LeaderboardRequestType.Social)
+            if (string.IsNullOrEmpty(query.SocialGroup))
             {
-                requestPath = CreateSocialLeaderboardUrlPath(serviceConfigurationId, leaderboardName, xuid, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
+                requestPath = CreateLeaderboardUrlPath(this.appConfig.ServiceConfigurationId, query.StatName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken);
             }
             else
             {
-                requestPath = CreateLeaderboardUrlPath(serviceConfigurationId, leaderboardName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, socialGroup);
+                requestPath = CreateSocialLeaderboardUrlPath(this.appConfig.ServiceConfigurationId, query.StatName, user.XboxUserId, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, query.SocialGroup);
             }
 
             XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(this.xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
             request.ContractVersion = leaderboardApiContract;
-            return request.GetResponseWithAuth(this.userContext, HttpCallResponseBodyType.JsonBody)
+            return request.GetResponseWithAuth(user, HttpCallResponseBodyType.JsonBody)
                 .ContinueWith(
                     responseTask =>
                     {
-                        var leaderboardRequestType = LeaderboardRequestType.Global;
-                        if (socialGroup != null)
-                        {
-                            leaderboardRequestType = LeaderboardRequestType.Social;
-                        }
-                        LeaderboardRequest leaderboardRequest = new LeaderboardRequest(leaderboardRequestType, leaderboardName);
-                        return this.HandleLeaderboardResponse(leaderboardRequest, responseTask, query);
+                        return this.HandleLeaderboardResponse(responseTask, query);
                     });
         }
 
-        internal LeaderboardResult HandleLeaderboardResponse(LeaderboardRequest request, Task<XboxLiveHttpResponse> responseTask, LeaderboardQuery query)
+        internal LeaderboardResult HandleLeaderboardResponse(Task<XboxLiveHttpResponse> responseTask, LeaderboardQuery query)
         {
             XboxLiveHttpResponse response = responseTask.Result;
 
@@ -109,25 +83,25 @@ namespace Microsoft.Xbox.Services.Leaderboard
             return result;
         }
 
-        private static string CreateLeaderboardUrlPath(string serviceConfigurationId, string leaderboardName, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken, string socialGroup)
+        private static string CreateLeaderboardUrlPath(string serviceConfigurationId, string statName, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken)
         {
             StringBuilder requestPath = new StringBuilder();
-            requestPath.AppendFormat("scids/{0}/leaderboards/stat({1})?", serviceConfigurationId, leaderboardName);
-            AppendQueryParameters(requestPath, maxItems, skipToXboxUserId, skipToRank, continuationToken, socialGroup);
+            requestPath.AppendFormat("scids/{0}/leaderboards/stat({1})?", serviceConfigurationId, statName);
+            AppendQueryParameters(requestPath, maxItems, skipToXboxUserId, skipToRank, continuationToken);
 
             return requestPath.ToString();
         }
 
-        private static string CreateSocialLeaderboardUrlPath(string serviceConfigurationId, string leaderboardName, string xuid, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken, string socialGroup)
+        private static string CreateSocialLeaderboardUrlPath(string serviceConfigurationId, string statName, string xuid, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken, string socialGroup)
         {
             StringBuilder requestPath = new StringBuilder();
-            requestPath.AppendFormat("users/xuid({0})/scids/{1}/stats/{2}/people/{3}?", xuid, serviceConfigurationId, leaderboardName, socialGroup);
-            AppendQueryParameters(requestPath, maxItems, skipToXboxUserId, skipToRank, continuationToken, null);
+            requestPath.AppendFormat("users/xuid({0})/scids/{1}/stats/{2}/people/{3}?", xuid, serviceConfigurationId, statName, socialGroup);
+            AppendQueryParameters(requestPath, maxItems, skipToXboxUserId, skipToRank, continuationToken);
 
             return requestPath.ToString();
         }
 
-        private static void AppendQueryParameters(StringBuilder queryString, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken, string socialGroup)
+        private static void AppendQueryParameters(StringBuilder queryString, uint maxItems, string skipToXboxUserId, uint skipToRank, string continuationToken)
         {
             if (maxItems > 0)
             {
@@ -150,12 +124,6 @@ namespace Microsoft.Xbox.Services.Leaderboard
             else if (skipToRank > 0)
             {
                 AppendQueryParameter(queryString, "skipToRank", skipToRank);
-            }
-
-            if (socialGroup != null)
-            {
-                AppendQueryParameter(queryString, "view", "People");
-                AppendQueryParameter(queryString, "viewTarget", socialGroup);
             }
 
             // Remove the trailing query string bit

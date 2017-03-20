@@ -28,6 +28,8 @@ namespace Microsoft.Xbox.Services.Stats.Manager
         private readonly CallBufferTimer statTimer;
         private readonly CallBufferTimer statPriorityTimer;
 
+        private readonly LeaderboardService leaderboardService;
+
         private void CheckUserValid(XboxLiveUser user)
         {
             if (user == null || user.XboxUserId == null || !this.userStatContextMap.ContainsKey(user.XboxUserId))
@@ -54,6 +56,8 @@ namespace Microsoft.Xbox.Services.Stats.Manager
 
             this.statPriorityTimer = new CallBufferTimer(TimePerCall);
             this.statPriorityTimer.TimerCompleteEvent += this.CallBufferTimerCallback;
+
+            this.leaderboardService = new LeaderboardService(new XboxLiveContextSettings(), XboxLiveAppConfiguration.Instance);
         }
 
         public void AddLocalUser(XboxLiveUser user)
@@ -285,33 +289,18 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             }
         }
 
-        public void GetLeaderboard(XboxLiveUser user, string statName, LeaderboardQuery query)
+        public void GetLeaderboard(XboxLiveUser user, LeaderboardQuery query)
         {
             this.CheckUserValid(user);
-            this.userStatContextMap[user.XboxUserId].xboxLiveContext.LeaderboardService.GetLeaderboardAsync(statName, query).ContinueWith(responseTask =>
+            this.leaderboardService.GetLeaderboardAsync(user, query).ContinueWith(responseTask =>
             {
-                ((StatsManager)Instance).AddEvent(
+                this.AddEvent(
                     new StatEvent(StatEventType.GetLeaderboardComplete, 
                     user, 
                     responseTask.Exception, 
                     new LeaderboardResultEventArgs(responseTask.Result)
                     ));
             });
-        }
-
-        public void GetSocialLeaderboard(XboxLiveUser user, string statName, string socialGroup, LeaderboardQuery query)
-        {
-            this.CheckUserValid(user);
-            this.userStatContextMap[user.XboxUserId].xboxLiveContext.LeaderboardService.GetSocialLeaderboardAsync(statName, socialGroup, query).ContinueWith(responseTask =>
-            {
-                ((StatsManager)Instance).AddEvent(
-                    new StatEvent(StatEventType.GetLeaderboardComplete,
-                    user,
-                    responseTask.Exception,
-                    new LeaderboardResultEventArgs(responseTask.Result)
-                    ));
-            });
-
         }
     }
 }

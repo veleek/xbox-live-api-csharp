@@ -38,7 +38,7 @@ namespace UWPIntegration
                 if (signInResult.Status == SignInStatus.Success)
                 {
                     this.textBlock.Text = this.xblUser.Gamertag;
-                    StatsManager.Singleton.AddLocalUser(this.xblUser);
+                    StatsManager.Instance.AddLocalUser(this.xblUser);
                     SocialManager.Instance.AddLocalUser(this.xblUser, SocialManagerExtraDetailLevel.None);
                 }
                 else
@@ -50,23 +50,30 @@ namespace UWPIntegration
 
         private int jumps;
 
-        private async void globalLeaderboardButton_Click(object sender, RoutedEventArgs e)
+        private void globalLeaderboardButton_Click(object sender, RoutedEventArgs e)
         {
             if (this.xblUser.IsSignedIn)
             {
-                LeaderboardQuery query = new LeaderboardQuery();
-                query.MaxItems = 1;
-                StatsManager.Singleton.GetLeaderboard(this.xblUser, "jumps", query);
+                LeaderboardQuery query = new LeaderboardQuery
+                {
+                    MaxItems = 1,
+                    StatName = "jumps"
+                };
+                StatsManager.Instance.GetLeaderboard(this.xblUser, query);
             }
         }
 
-        private async void socialLeaderboardButton_Click(object sender, RoutedEventArgs e)
+        private void socialLeaderboardButton_Click(object sender, RoutedEventArgs e)
         {
             if (this.xblUser.IsSignedIn)
             {
-                LeaderboardQuery query = new LeaderboardQuery();
-                query.MaxItems = 1;
-                StatsManager.Singleton.GetSocialLeaderboard(this.xblUser, "headshots", "all", query);
+                LeaderboardQuery query = new LeaderboardQuery
+                {
+                    MaxItems = 1,
+                    SocialGroup = "all",
+                    StatName = "headshots"
+                };
+                StatsManager.Instance.GetLeaderboard(this.xblUser, query);
             }
         }
 
@@ -74,22 +81,22 @@ namespace UWPIntegration
         {
             if (!this.xblUser.IsSignedIn) return;
 
-            StatsManager.Singleton.SetStatAsInteger(this.xblUser, "headshots", this.jumps++);
+            StatsManager.Instance.SetStatAsInteger(this.xblUser, "headshots", this.jumps++);
         }
 
         private void ReadStats_Click(object sender, RoutedEventArgs e)
         {
             if (!this.xblUser.IsSignedIn) return;
 
-            var statNames = StatsManager.Singleton.GetStatNames(this.xblUser);
-            this.StatsData.Text = string.Join(Environment.NewLine, statNames.Select(n => StatsManager.Singleton.GetStat(this.xblUser, n)).Select(s => $"{s.Name} ({s.Type}) = {s.Value}"));
+            var statNames = StatsManager.Instance.GetStatNames(this.xblUser);
+            this.StatsData.Text = string.Join(Environment.NewLine, statNames.Select(n => StatsManager.Instance.GetStat(this.xblUser, n)).Select(s => $"{s.Name} ({s.Type}) = {s.Value}"));
         }
 
         private async void StatsDoWork_Click(object sender, RoutedEventArgs e)
         {
             if (!this.xblUser.IsSignedIn) return;
 
-            List<StatEvent> events = StatsManager.Singleton.DoWork();
+            List<StatEvent> events = StatsManager.Instance.DoWork();
             foreach (StatEvent ev in events)
             {
                 if (ev.EventType == StatEventType.GetLeaderboardComplete)
@@ -107,14 +114,7 @@ namespace UWPIntegration
 
                     if (result.HasNext)
                     {
-                        if (string.IsNullOrEmpty(result.NextQuery.SocialGroup))
-                        {
-                            StatsManager.Singleton.GetLeaderboard(ev.LocalUser, result.NextQuery.StatName, result.NextQuery);
-                        }
-                        else
-                        {
-                            StatsManager.Singleton.GetSocialLeaderboard(ev.LocalUser, result.NextQuery.StatName, result.NextQuery.SocialGroup, result.NextQuery);
-                        }
+                        StatsManager.Instance.GetLeaderboard(ev.LocalUser, result.NextQuery);
                     }
                 }
             }

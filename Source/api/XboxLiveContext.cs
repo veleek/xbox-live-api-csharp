@@ -5,8 +5,6 @@ namespace Microsoft.Xbox.Services
 {
     using global::System.IO;
 
-    using Microsoft.Xbox.Services.Leaderboard;
-
     public partial class XboxLiveContext
     {
         public XboxLiveContext(XboxLiveUser user)
@@ -22,15 +20,11 @@ namespace Microsoft.Xbox.Services
                 this.AppConfig = null;
             }
             this.Settings = new XboxLiveContextSettings();
-
-            this.LeaderboardService = UseMockServices ? (ILeaderboardService)new MockLeaderboardService(user, this.Settings, this.AppConfig) : new LeaderboardService(user, this.Settings, this.AppConfig);
         }
 
         public XboxLiveAppConfiguration AppConfig { get; private set; }
 
         public XboxLiveContextSettings Settings { get; private set; }
-
-        internal ILeaderboardService LeaderboardService { get; private set; }
 
         public XboxLiveUser User { get; private set; }
     }

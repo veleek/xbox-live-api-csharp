@@ -9,23 +9,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
     public class MockLeaderboardService : ILeaderboardService
     {
-        private readonly XboxLiveUser userContext;
-        private readonly XboxLiveContextSettings xboxLiveContextSettings;
-        private readonly XboxLiveAppConfiguration appConfig;
-
-        internal MockLeaderboardService(XboxLiveUser userContext, XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
+        internal MockLeaderboardService()
         {
-            this.userContext = userContext;
-            this.xboxLiveContextSettings = xboxLiveContextSettings;
-            this.appConfig = appConfig;
         }
 
-        public Task<LeaderboardResult> GetLeaderboardAsync(string statName, LeaderboardQuery query)
-        {
-            return Task.FromResult(this.CreateLeaderboardResponse());
-        }
-
-        public Task<LeaderboardResult> GetSocialLeaderboardAsync(string leaderboardName, string socialGroup, LeaderboardQuery query)
+        public Task<LeaderboardResult> GetLeaderboardAsync(XboxLiveUser user, LeaderboardQuery query)
         {
             return Task.FromResult(this.CreateLeaderboardResponse());
         }

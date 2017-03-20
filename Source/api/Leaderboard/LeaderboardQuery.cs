@@ -28,17 +28,17 @@ namespace Microsoft.Xbox.Services.Leaderboard
             this.ContinuationToken = continuationToken;
         }
 
-        public bool SkipResultToMe { get; set; }
+        public string StatName { get; set; }
 
-        public uint SkipResultsToRank { get; set; }
+        public string SocialGroup { get; set; }
 
         public uint MaxItems { get; set; }
 
         public SortOrder Order { get; set; }
 
-        public string StatName { get; internal set; }
+        public bool SkipResultToMe { get; set; }
 
-        public string SocialGroup { get; internal set; }
+        public uint SkipResultsToRank { get; set; }
 
         internal string ContinuationToken { get; set; }
 

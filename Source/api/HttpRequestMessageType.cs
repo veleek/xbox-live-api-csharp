@@ -3,7 +3,7 @@
 
 namespace Microsoft.Xbox.Services
 {
-    public enum HttpRequestMessageType : int
+    public enum HttpRequestMessageType
     {
         EmptyMessage = 0,
         StringMessage = 1,
