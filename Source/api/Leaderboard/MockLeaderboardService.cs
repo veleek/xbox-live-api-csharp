@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
 
 namespace Microsoft.Xbox.Services.Leaderboard
 {
@@ -10,23 +9,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
     public class MockLeaderboardService : ILeaderboardService
     {
-        private readonly XboxLiveUser userContext;
-        private readonly XboxLiveContextSettings xboxLiveContextSettings;
-        private readonly XboxLiveAppConfiguration appConfig;
-
-        internal MockLeaderboardService(XboxLiveUser userContext, XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
+        internal MockLeaderboardService()
         {
-            this.userContext = userContext;
-            this.xboxLiveContextSettings = xboxLiveContextSettings;
-            this.appConfig = appConfig;
         }
 
-        public Task<LeaderboardResult> GetLeaderboardAsync(string statName, LeaderboardQuery query)
-        {
-            return Task.FromResult(this.CreateLeaderboardResponse());
-        }
-
-        public Task<LeaderboardResult> GetSocialLeaderboardAsync(string leaderboardName, string socialGroup, LeaderboardQuery query)
+        public Task<LeaderboardResult> GetLeaderboardAsync(XboxLiveUser user, LeaderboardQuery query)
         {
             return Task.FromResult(this.CreateLeaderboardResponse());
         }
@@ -47,7 +34,8 @@ namespace Microsoft.Xbox.Services.Leaderboard
                     Values = row.Value != null ? new List<string> { row.Value } : row.Values
                 }).ToList();
 
-            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, this.userContext, this.xboxLiveContextSettings, this.appConfig);
+            // Create a result with an 'empty' next query so that it won't have paiging.
+            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, new LeaderboardQuery());
             return result;
         }
     }
