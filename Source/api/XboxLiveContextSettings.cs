@@ -28,8 +28,6 @@ namespace Microsoft.Xbox.Services
 
         public bool EnableServiceCallRoutedEvents { get; set; }
 
-        //public event EventHandler<XboxServiceCallRoutedEventArgs> ServiceCallRouted;
-
         public void DisableAssertsForXboxLiveThrottlingInDevSandboxes(XboxLiveContextThrottleSetting setting)
         {
             throw new NotImplementedException();
