@@ -74,12 +74,8 @@ namespace Microsoft.Xbox.Services.Leaderboard
                 rows.Add(newRow);
             }
 
-            if (lbResponse.PagingInfo != null)
-            {
-                query = new LeaderboardQuery(query, lbResponse.PagingInfo.ContinuationToken);
-            }
-
-            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, query);
+            LeaderboardQuery nextQuery = new LeaderboardQuery(query, lbResponse.PagingInfo != null ? lbResponse.PagingInfo.ContinuationToken : null);
+            LeaderboardResult result = new LeaderboardResult(lbResponse.LeaderboardInfo.TotalCount, columns, rows, nextQuery);
             return result;
         }
 

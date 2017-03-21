@@ -9,6 +9,8 @@ namespace Microsoft.Xbox.Services.Social
 
     public class ProfileService
     {
+        private readonly string profileEndpoint;
+
         protected XboxLiveContextSettings settings;
         protected XboxLiveContext context;
         protected XboxLiveAppConfiguration config;
@@ -18,6 +20,8 @@ namespace Microsoft.Xbox.Services.Social
             this.config = config;
             this.context = context;
             this.settings = settings;
+
+            this.profileEndpoint = this.config.GetEndpointForService("profile");
         }
 
         public Task<XboxUserProfile> GetUserProfileAsync(string xboxUserId)
@@ -69,8 +73,7 @@ namespace Microsoft.Xbox.Services.Social
             }
             else
             {
-                string endpoint = XboxLiveEndpoint.GetEndpointForService("profile", this.config);
-                XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "POST", endpoint, "/users/batch/profile/settings");
+                XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "POST", profileEndpoint, "/users/batch/profile/settings");
 
                 req.ContractVersion = "2";
                 req.ContentType = "application/json; charset=utf-8";
