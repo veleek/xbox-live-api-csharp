@@ -79,7 +79,7 @@ namespace Microsoft.Xbox.Services.Social
                 req.ContentType = "application/json; charset=utf-8";
                 Models.ProfileSettingsRequest reqBodyObject = new Models.ProfileSettingsRequest(xboxUserIds, true);
                 req.RequestBody = JsonSerialization.ToJson(reqBodyObject);
-                return req.GetResponseWithAuth(this.context.User, HttpCallResponseBodyType.JsonBody).ContinueWith(task =>
+                return req.GetResponseWithAuth(this.context.User).ContinueWith(task =>
                 {
                     XboxLiveHttpResponse response = task.Result;
                     Models.ProfileSettingsResponse responseBody = new Models.ProfileSettingsResponse();
