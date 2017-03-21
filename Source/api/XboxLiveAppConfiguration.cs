@@ -50,7 +50,7 @@ namespace Microsoft.Xbox.Services
 
         public string GetEndpointForService(string serviceName, string protocol = "https")
         {
-            return string.Format("{0}://{1}{2}.xboxlive.com", protocol, serviceName, string.IsNullOrWhiteSpace(this.Environment) ? string.Empty : ("." + this.Environment));
+            return string.Format("{0}://{1}{2}.xboxlive.com", protocol, serviceName, string.IsNullOrEmpty(this.Environment) ? string.Empty : ("." + this.Environment));
         }
 
         public static XboxLiveAppConfiguration Load()

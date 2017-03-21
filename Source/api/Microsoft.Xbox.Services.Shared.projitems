@@ -55,6 +55,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SignInCompletedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\LeaderboardResultEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\Manager\StatEventType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Stats\Manager\StatValueType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\StatEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\AuthConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IUserImpl.cs" />

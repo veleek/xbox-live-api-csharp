@@ -16,7 +16,6 @@ namespace Microsoft.Xbox.Services.Stats.Manager
         private class StatsUserContext
         {
             public StatsValueDocument statsValueDocument;
-            public XboxLiveContext xboxLiveContext;
             public StatsService statsService;
             public XboxLiveUser user;
         }
@@ -73,18 +72,18 @@ namespace Microsoft.Xbox.Services.Stats.Manager
                 throw new ArgumentException("User already in map");
             }
 
-            var context = new StatsUserContext();
+            var context = new StatsUserContext
+            {
+                statsService = new StatsService(new XboxLiveContext(user)),
+                user = user,
+                statsValueDocument = new StatsValueDocument(null)
+            };
+
+
+
             this.userStatContextMap.Add(xboxUserId, context);
 
-            var xboxLiveContext = new XboxLiveContext(user);
-            var statsService = new StatsService(xboxLiveContext);
-
-            context.xboxLiveContext = xboxLiveContext;
-            context.statsService = statsService;
-            context.user = user;
-            context.statsValueDocument = new StatsValueDocument(null);
-
-            statsService.GetStatsValueDocument().ContinueWith(statsValueDocTask =>
+            context.statsService.GetStatsValueDocument().ContinueWith(statsValueDocTask =>
             {
                 lock (this.userStatContextMap)
                 {
