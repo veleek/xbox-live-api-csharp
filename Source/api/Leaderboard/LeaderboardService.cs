@@ -44,7 +44,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
             XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(this.xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
             request.ContractVersion = leaderboardApiContract;
-            return request.GetResponseWithAuth(user, HttpCallResponseBodyType.JsonBody)
+            return request.GetResponseWithAuth(user)
                 .ContinueWith(
                     responseTask =>
                     {

@@ -14,26 +14,24 @@ namespace Microsoft.Xbox.Services.Stats.Manager
     public class StatsService
     {
         private readonly XboxLiveContextSettings settings;
-        private readonly XboxLiveContext context;
         private readonly XboxLiveAppConfiguration config;
 
         private readonly string statsReadEndpoint;
         private readonly string statsWriteEndpoint;
 
-        internal StatsService(XboxLiveContext context)
+        internal StatsService(XboxLiveContextSettings settings, XboxLiveAppConfiguration config)
         {
-            this.config = context.AppConfig;
-            this.context = context;
-            this.settings = context.Settings;
+            this.config = config;
+            this.settings = settings;
 
-            this.statsReadEndpoint = context.AppConfig.GetEndpointForService("statsread");
-            this.statsWriteEndpoint = context.AppConfig.GetEndpointForService("statswrite");
+            this.statsReadEndpoint = config.GetEndpointForService("statsread");
+            this.statsWriteEndpoint = config.GetEndpointForService("statswrite");
         }
 
-        public Task UpdateStatsValueDocument(StatsValueDocument statValuePostDocument)
+        public Task UpdateStatsValueDocument(XboxLiveUser user, StatsValueDocument statValuePostDocument)
         {
             string pathAndQuery = PathAndQueryStatSubpath(
-                this.context.User.XboxUserId,
+                user.XboxUserId,
                 this.config.ServiceConfigurationId,
                 false
             );
@@ -60,7 +58,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             {
             });
 
-            return req.GetResponseWithAuth(this.context.User, HttpCallResponseBodyType.JsonBody).ContinueWith(task =>
+            return req.GetResponseWithAuth(user).ContinueWith(task =>
             {
                 XboxLiveHttpResponse response = task.Result;
                 if (response.ErrorCode == 0)
@@ -70,19 +68,19 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             });
         }
 
-        public Task<StatsValueDocument> GetStatsValueDocument()
+        public Task<StatsValueDocument> GetStatsValueDocument(XboxLiveUser user)
         {
             string pathAndQuery = PathAndQueryStatSubpath(
-                this.context.User.XboxUserId,
+                user.XboxUserId,
                 this.config.ServiceConfigurationId,
                 false
             );
 
             XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "GET", this.statsReadEndpoint, pathAndQuery);
-            return req.GetResponseWithAuth(this.context.User, HttpCallResponseBodyType.JsonBody).ContinueWith(task =>
+            return req.GetResponseWithAuth(user).ContinueWith(task =>
             {
                 XboxLiveHttpResponse response = task.Result;
-                var svdModel = JsonConvert.DeserializeObject<Models.StatsValueDocumentModel>(response.ResponseBodyJson);
+                var svdModel = JsonConvert.DeserializeObject<Models.StatsValueDocumentModel>(response.ResponseBodyString);
                 var svd = new StatsValueDocument(svdModel.Stats.Title)
                 {
                     Revision = svdModel.Revision + 1

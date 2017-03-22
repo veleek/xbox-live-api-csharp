@@ -60,7 +60,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
             request.ContractVersion = "1";
 
-            return request.GetResponseWithAuth(user, HttpCallResponseBodyType.JsonBody)
+            return request.GetResponseWithAuth(user)
                 .ContinueWith(responseTask =>
                 {
                     var response = responseTask.Result;
@@ -111,7 +111,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 request.RequestBody = postBody.ToString(Formatting.None);
             }
 
-            return request.GetResponseWithAuth(user, HttpCallResponseBodyType.JsonBody)
+            return request.GetResponseWithAuth(user)
                 .ContinueWith(responseTask =>
                 {
                     var response = responseTask.Result;
