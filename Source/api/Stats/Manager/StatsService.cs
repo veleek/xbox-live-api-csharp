@@ -34,7 +34,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
         {
             string pathAndQuery = PathAndQueryStatSubpath(
                 user.XboxUserId,
-                this.config.ServiceConfigurationId,
+                this.config.PrimaryServiceConfigId,
                 false
             );
 
@@ -64,7 +64,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
         {
             string pathAndQuery = PathAndQueryStatSubpath(
                 user.XboxUserId,
-                this.config.ServiceConfigurationId,
+                this.config.PrimaryServiceConfigId,
                 false
             );
 

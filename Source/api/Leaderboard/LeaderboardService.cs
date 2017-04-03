@@ -35,11 +35,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
             string requestPath;
             if (string.IsNullOrEmpty(query.SocialGroup))
             {
-                requestPath = CreateLeaderboardUrlPath(this.appConfig.ServiceConfigurationId, query.StatName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken);
+                requestPath = CreateLeaderboardUrlPath(this.appConfig.PrimaryServiceConfigId, query.StatName, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken);
             }
             else
             {
-                requestPath = CreateSocialLeaderboardUrlPath(this.appConfig.ServiceConfigurationId, query.StatName, user.XboxUserId, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, query.SocialGroup);
+                requestPath = CreateSocialLeaderboardUrlPath(this.appConfig.PrimaryServiceConfigId, query.StatName, user.XboxUserId, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, query.SocialGroup);
             }
 
             XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(this.xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
