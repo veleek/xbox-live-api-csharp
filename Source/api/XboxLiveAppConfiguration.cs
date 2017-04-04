@@ -41,8 +41,7 @@ namespace Microsoft.Xbox.Services
 
         internal bool UseFirstPartyToken { get; set; }
 
-        [JsonProperty("PrimaryServiceConfigId")]
-        public string ServiceConfigurationId { get; set; }
+        public string PrimaryServiceConfigId { get; set; }
 
         public uint TitleId { get; set; }
 
