@@ -5,6 +5,8 @@ namespace Microsoft.Xbox.Services
 {
     using global::System;
 
+    using Newtonsoft.Json;
+
     public partial class XboxLiveAppConfiguration
     {
         public const string FileName = "XboxServices.config";
@@ -39,21 +41,8 @@ namespace Microsoft.Xbox.Services
 
         internal bool UseFirstPartyToken { get; set; }
 
-        public string PrimaryServiceConfigId { get; set; }
-
-        [Obsolete("Use PrimaryServiceConfigId instead")]
-        public string ServiceConfigurationId
-        {
-            get
-            {
-                return this.PrimaryServiceConfigId;
-            }
-
-            set
-            {
-                this.PrimaryServiceConfigId = value;
-            }
-        }
+        [JsonProperty("PrimaryServiceConfigId")]
+        public string ServiceConfigurationId { get; set; }
 
         public uint TitleId { get; set; }
 
