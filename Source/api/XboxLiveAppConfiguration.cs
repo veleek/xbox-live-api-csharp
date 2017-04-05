@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
 
 namespace Microsoft.Xbox.Services
 {
     using global::System;
+
+    using Newtonsoft.Json;
 
     public partial class XboxLiveAppConfiguration
     {
@@ -40,7 +41,7 @@ namespace Microsoft.Xbox.Services
 
         internal bool UseFirstPartyToken { get; set; }
 
-        public string ServiceConfigurationId { get; set; }
+        public string PrimaryServiceConfigId { get; set; }
 
         public uint TitleId { get; set; }
 
@@ -72,7 +73,5 @@ namespace Microsoft.Xbox.Services
                 throw new XboxException(string.Format("Unable to find or load Xbox Live configuration.  Make sure a properly configured {0} exists.", FileName), e);
             }
         }
-
-
     }
 }
