@@ -59,6 +59,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)Stats\StatEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\AuthConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\IUserImpl.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TitleStorage\BlobQueryProperties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TitleStorage\TitleStorageBlobMetadataInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TitleStorage\TitleStorageBlobMetadataResultInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TitleStorage\ITitleStorageService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TitleStorage\QuotaInfoResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TokenAndSignatureResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpCallRequestMessage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HttpMethod.cs" />

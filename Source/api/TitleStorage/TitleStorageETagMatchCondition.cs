@@ -1,18 +1,20 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Microsoft.Xbox.Services.TitleStorage
 {
+    /// <summary>Defines values used to indicate the ETag match condition used when downloading, uploading or deleting title storage data.</summary>
     public enum TitleStorageETagMatchCondition : int
     {
-        NotUsed = 0,
-        IfMatch = 1,
-        IfNotMatch = 2,
+        /// <summary>There is no match condition.</summary>
+        NotUsed,
+
+        /// <summary>Perform the request if the Etag value specified matches the service value.</summary>
+        IfMatch,
+
+        /// <summary>Perform the request if the Etag value specified does not match the service value.</summary>
+        IfNotMatch
     }
 
 }

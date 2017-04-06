@@ -16,13 +16,14 @@ namespace Microsoft.Xbox.Services
     {
         private const string AuthorizationHeaderName = "Authorization";
         private const string SignatureHeaderName = "Signature";
-        private const string ETagHeaderName = "ETag";
-        private const string DateHeaderName = "Date";
+        private const string RangeHeaderName = "Range";
         private const string ContentLengthHeaderName = "Content-Length";
 
         private readonly XboxLiveContextSettings contextSettings;
         internal readonly HttpWebRequest webRequest;
         internal readonly Dictionary<string, string> customHeaders = new Dictionary<string, string>();
+
+        internal bool longHttpCall;
 
         internal XboxLiveHttpRequest(XboxLiveContextSettings settings, string method, string serverName, string pathQueryFragment)
         {
@@ -50,9 +51,9 @@ namespace Microsoft.Xbox.Services
             this.SetCustomHeader("UserAgent", userAgentType + "/" + userAgentVersion);
         }
 
-        public string Method { get; private set; }
+        public string Method { get; set; }
 
-        public string Url { get; private set; }
+        public string Url { get; set; }
 
         public string ContractVersion { get; set; }
 
@@ -137,6 +138,12 @@ namespace Microsoft.Xbox.Services
             {
                 this.webRequest.Headers[customHeader.Key] = customHeader.Value;
             }
+            #if !UNITY
+            if (this.longHttpCall)
+            {
+                this.webRequest.ContinueTimeout = this.contextSettings.LongHttpTimeout.Milliseconds;
+            }
+            #endif
 
             TaskCompletionSource<XboxLiveHttpResponse> getResponseCompletionSource = new TaskCompletionSource<XboxLiveHttpResponse>();
 
@@ -200,7 +207,14 @@ namespace Microsoft.Xbox.Services
 
         public void SetCustomHeader(string headerName, string headerValue)
         {
-            this.customHeaders[headerName] = headerValue;
+            if (!this.customHeaders.ContainsKey(headerName))
+            {
+                this.customHeaders.Add(headerName, headerValue);
+            }
+            else
+            {
+                this.customHeaders[headerName] = headerValue;
+            }
         }
 
         public static XboxLiveHttpRequest Create(XboxLiveContextSettings settings, string httpMethod, string serverName, string pathQueryFragment)
@@ -209,5 +223,42 @@ namespace Microsoft.Xbox.Services
                 new MockXboxLiveHttpRequest(settings, httpMethod, serverName, pathQueryFragment) :
                 new XboxLiveHttpRequest(settings, httpMethod, serverName, pathQueryFragment);
         }
+
+        public void SetRangeHeader(uint startByte, uint endByte)
+        {
+            var byteRange = "bytes=" + startByte + "-" + endByte;
+#if !WINDOWS_UWP
+                this.webRequest.AddRange((int)startByte, (int)endByte);
+#else
+                this.webRequest.Headers[RangeHeaderName] = byteRange;
+#endif
+        }
+        /// <summary>
+        /// Creates a query string out of a list of parameters
+        /// </summary>
+        /// <param name="paramDictionary">List of Parameters to be added to the query</param>
+        /// <returns>a query string that should be appended to the request</returns>
+        public static string GetQueryFromParams(Dictionary<string, string> paramDictionary)
+        {
+            var queryString = new StringBuilder();
+            if (paramDictionary.Count > 0)
+            {
+                queryString.Append("?");
+                const string queryDelimiter = "&";
+                var firstParameter = true;
+                foreach (var paramPair in paramDictionary)
+                {
+                    if (firstParameter)
+                        firstParameter = false;
+                    else
+                        queryString.Append(queryDelimiter);
+
+                    queryString.Append(string.Format("{0}={1}", paramPair.Key, paramPair.Value));
+                }
+            }
+
+            return queryString.ToString();
+        }
+
     }
 }
