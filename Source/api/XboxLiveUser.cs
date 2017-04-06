@@ -64,24 +64,22 @@ namespace Microsoft.Xbox.Services
             }
         }
 
+        public Windows.System.User SystemUser
+        {
+            get
+            {
+                return this.userImpl.CreationContext;
+            }
+        }
+
         public Task<SignInResult> SignInAsync()
         {
-            return this.userImpl.SignInImpl(true, false).ContinueWith(signInTask =>
-            {
-                OnSignInCompleted(this);
-
-                return signInTask.Result;
-            });
+            return this.userImpl.SignInImpl(true, false);
         }
 
         public Task<SignInResult> SignInSilentlyAsync()
         {
             return this.userImpl.SignInImpl(false, false);
-        }
-
-        public Task<SignInResult> SwitchAccountAsync()
-        {
-            return this.userImpl.SignInImpl(false, true);
         }
 
         public Task<TokenAndSignatureResult> GetTokenAndSignatureAsync(string httpMethod, string url, string headers)
@@ -99,13 +97,13 @@ namespace Microsoft.Xbox.Services
             return this.userImpl.InternalGetTokenAndSignatureAsync(httpMethod, url, headers, body, false, false);
         }
 
-        private static void OnSignInCompleted(IXboxLiveUser user)
+        private static void OnSignInCompleted(WeakReference<IXboxLiveUser> user)
         {
             var handler = SignInCompleted;
             if (handler != null) handler(null, new SignInCompletedEventArgs(user));
         }
 
-        private static void OnSignOutCompleted(IXboxLiveUser user)
+        private static void OnSignOutCompleted(WeakReference<IXboxLiveUser> user)
         {
             var handler = SignOutCompleted;
             if (handler != null) handler(null, new SignOutCompletedEventArgs(user));

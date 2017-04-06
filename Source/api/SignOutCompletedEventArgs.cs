@@ -7,9 +7,13 @@ namespace Microsoft.Xbox.Services
 
     public class SignOutCompletedEventArgs : EventArgs
     {
-        public SignOutCompletedEventArgs(IXboxLiveUser user)
+        public SignOutCompletedEventArgs(WeakReference<IXboxLiveUser> user)
         {
-            this.User = user;
+            IXboxLiveUser xblUser = null;
+            if (user.TryGetTarget(out xblUser))
+            {
+                this.User = xblUser;
+            }
         }
 
         public IXboxLiveUser User { get; private set; }
