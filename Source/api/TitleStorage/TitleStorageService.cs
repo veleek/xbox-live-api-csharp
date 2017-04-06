@@ -319,12 +319,12 @@ namespace Microsoft.Xbox.Services.TitleStorage
                         "{0}/users/xuid({1})/scids/{2}",
                         titleStorageType.ToString().ToLowerInvariant(),
                         user.XboxUserId,
-                        this.appConfig.ServiceConfigurationId);
+                        this.appConfig.PrimaryServiceConfigId);
                     break;
                 case TitleStorageType.GlobalStorage:
                     pathBuilder.AppendFormat(
                         "global/scids/{0}",
-                        this.appConfig.ServiceConfigurationId);
+                        this.appConfig.PrimaryServiceConfigId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("titleStorageType");

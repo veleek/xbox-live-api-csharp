@@ -79,6 +79,9 @@
     <Content Include="Leaderboards\LeaderboardUT.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="TitleStorage\TitleStorageUT.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="packages.config" />
     <None Include="XboxServices.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
