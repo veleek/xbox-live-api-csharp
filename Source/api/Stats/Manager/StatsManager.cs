@@ -19,8 +19,8 @@ namespace Microsoft.Xbox.Services.Stats.Manager
 
         private readonly Dictionary<string, StatsValueDocument> userDocumentMap;
         private readonly List<StatEvent> eventList;
-        private readonly CallBufferTimer statTimer;
-        private readonly CallBufferTimer statPriorityTimer;
+        private readonly CallBufferTimer<XboxLiveUser> statTimer;
+        private readonly CallBufferTimer<XboxLiveUser> statPriorityTimer;
 
         private readonly StatsService statsService;
         private readonly LeaderboardService leaderboardService;
@@ -46,11 +46,11 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             this.userDocumentMap = new Dictionary<string, StatsValueDocument>();
             this.eventList = new List<StatEvent>();
 
-            this.statTimer = new CallBufferTimer(TimePerCall);
-            this.statTimer.TimerCompleteEvent += this.TimerCompleteCallback;
+            this.statTimer = new CallBufferTimer<XboxLiveUser>(TimePerCall);
+            this.statTimer.Completed += this.TimerCompleteCallback;
 
-            this.statPriorityTimer = new CallBufferTimer(TimePerCall);
-            this.statPriorityTimer.TimerCompleteEvent += this.TimerCompleteCallback;
+            this.statPriorityTimer = new CallBufferTimer<XboxLiveUser>(TimePerCall);
+            this.statPriorityTimer.Completed += this.TimerCompleteCallback;
 
             XboxLiveContextSettings settings = new XboxLiveContextSettings();
             this.statsService = new StatsService(settings, XboxLiveAppConfiguration.Instance);
@@ -360,11 +360,11 @@ namespace Microsoft.Xbox.Services.Stats.Manager
                 });
         }
 
-        private void TimerCompleteCallback(object caller, CallBufferReturnObject returnObject)
+        private void TimerCompleteCallback(object caller, CallBufferEventArgs<XboxLiveUser> returnObject)
         {
-            if (returnObject.UserList.Count != 0)
+            if (returnObject.Elements.Count != 0)
             {
-                this.RequestFlushToServiceCallback(returnObject.UserList[0]);
+                this.RequestFlushToServiceCallback(returnObject.Elements[0]);
             }
         }
 

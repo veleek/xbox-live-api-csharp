@@ -17,7 +17,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
             this.Type = type;
         }
 
-        public InternalSocialEvent() : this(InternalSocialEventType.Unknown)
+        private InternalSocialEvent() : this(InternalSocialEventType.Unknown)
         {
         }
 

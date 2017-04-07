@@ -15,18 +15,30 @@ namespace Microsoft.Xbox.Services.Social.Manager
         {
         }
 
-        public SocialManagerPresenceTitleRecord(PresenceDeviceType deviceType, PresenceTitleRecord titleRecord)
+        public SocialManagerPresenceTitleRecord(PresenceDeviceType device, PresenceTitleRecord titleRecord)
         {
-            this.DeviceType = deviceType;
+            this.Device = device;
             this.TitleId = titleRecord.TitleId;
             this.IsBroadcasting = titleRecord.BroadcastRecord.StartTime != DateTimeOffset.MinValue;
             this.IsTitleActive = titleRecord.IsTitleActive;
             this.PresenceText = titleRecord.Presence;
         }
 
+        public string State { get; set; }
+
         public uint TitleId { get; set; }
 
-        public string State { get; set; }
+        public string PresenceText { get; set; }
+
+        public bool IsPrimary { get; set; }
+
+        public bool IsBroadcasting { get; set; }
+
+        public PresenceDeviceType Device { get; set; }
+
+        [JsonProperty("TitleType")]
+        public PresenceTitleType? Type { get; set; }
+
 
         [JsonIgnore]
         public bool IsTitleActive
@@ -40,12 +52,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 this.State = value ? "active" : null;
             }
         }
-
-        public string PresenceText { get; set; }
-
-        public bool IsBroadcasting { get; set; }
-
-        public PresenceDeviceType DeviceType { get; private set; }
 
         public bool Equals(SocialManagerPresenceTitleRecord other)
         {

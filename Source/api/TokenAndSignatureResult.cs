@@ -1,78 +1,34 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
 #if WINDOWS_UWP
 using Windows.Security.Authentication.Web.Core;
+
 #endif
 
 namespace Microsoft.Xbox.Services
 {
     public class TokenAndSignatureResult
     {
+        public string WebAccountId { get; set; }
 
-        public string WebAccountId
-        {
-            get;
-            internal set;
-        }
+        public string Privileges { get; set; }
 
-        public string Privileges
-        {
-            get;
-            internal set;
-        }
+        public string AgeGroup { get; set; }
 
-        public string AgeGroup
-        {
-            get;
-            internal set;
-        }
+        public string XboxUserHash { get; set; }
 
-        public string XboxUserHash
-        {
-            get;
-            internal set;
-        }
+        public string Gamertag { get; set; }
 
-        public string Gamertag
-        {
-            get;
-            internal set;
-        }
+        public string XboxUserId { get; set; }
 
-        public string XboxUserId
-        {
-            get;
-            internal set;
-        }
+        public string Signature { get; set; }
 
-        public string Signature
-        {
-            get;
-            internal set;
-        }
+        public string Token { get; set; }
 
-        public string Token
-        {
-            get;
-            internal set;
-        }
-
-        internal string Reserved
-        {
-            get;
-            set;
-        }
+        internal string Reserved { get; set; }
 #if WINDOWS_UWP
-        internal WebTokenRequestResult TokenRequestResult
-        {
-            get;
-            set;
-        }
+        internal WebTokenRequestResult TokenRequestResult { get; set; }
 #endif
     }
 }

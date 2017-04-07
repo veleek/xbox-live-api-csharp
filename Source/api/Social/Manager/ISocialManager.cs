@@ -11,7 +11,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
     {
         IList<XboxLiveUser> LocalUsers { get; }
 
-        Task AddLocalUser(XboxLiveUser user, SocialManagerExtraDetailLevel extraDetailLevel);
+        Task AddLocalUser(XboxLiveUser user, SocialManagerExtraDetailLevel extraDetailLevel = SocialManagerExtraDetailLevel.None);
 
         void RemoveLocalUser(XboxLiveUser user);
 

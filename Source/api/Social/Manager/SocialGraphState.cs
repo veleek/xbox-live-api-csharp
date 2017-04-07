@@ -26,8 +26,8 @@ namespace Microsoft.Xbox.Services.Social.Manager
     internal enum InternalSocialEventType
     {
         Unknown,
-        UsersChanged,
         UsersAdded,
+        UsersChanged,
         UsersRemoved,
         PresenceChanged,
         DevicePresenceChanged,

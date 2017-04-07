@@ -92,6 +92,11 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
         public UserBuffer Inactive { get; private set; }
 
+        public void Initialize(IList<XboxSocialUser> users)
+        {
+            
+        }
+
         public void AddEvent(InternalSocialEvent internalSocialEvent)
         {
             this.Active.Enqueue(internalSocialEvent);

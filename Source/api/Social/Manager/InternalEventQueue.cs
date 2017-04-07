@@ -16,20 +16,15 @@ namespace Microsoft.Xbox.Services.Social.Manager
             this.eventQueue = new Queue<InternalSocialEvent>();
         }
 
-        public void Enqueue(InternalSocialEventType socialEventType, List<ulong> userList)
-        {
-            InternalSocialEvent internalEvent = new InternalSocialEvent(socialEventType, userList);
-            this.Enqueue(internalEvent);
-        }
-
         public Task Enqueue(InternalSocialEventType socialEventType, List<XboxSocialUser> userList)
         {
-            var numGroupsofUsers = userList.Count / MaxUsersAffectedPerEvent + 1;
+            var numGroups = userList.Count / MaxUsersAffectedPerEvent + 1;
 
             List<Task> eventTasks = new List<Task>();
-            for (int i = 0; i < numGroupsofUsers; ++i)
+            for (int i = 0; i < numGroups; ++i)
             {
-                var evt = new InternalSocialEvent(socialEventType, userList.GetRange(i * numGroupsofUsers, numGroupsofUsers));
+                int numUsers = i == numGroups - 1 ? (userList.Count % MaxUsersAffectedPerEvent) : MaxUsersAffectedPerEvent;
+                var evt = new InternalSocialEvent(socialEventType, userList.GetRange(i * MaxUsersAffectedPerEvent, numUsers));
                 this.Enqueue(evt);
                 eventTasks.Add(evt.Task);
             }

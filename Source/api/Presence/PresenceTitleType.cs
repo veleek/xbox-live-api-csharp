@@ -1,12 +1,12 @@
-// Copyright (c) Microsoft Corporation
+﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Xbox.Services.Presence
 {
-    public enum PresenceMediaIdType
+    public enum PresenceTitleType
     {
         Unknown = 0,
-        Bing = 1,
-        MediaProvider = 2,
+        Game,
+        App,
     }
 }

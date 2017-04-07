@@ -10,23 +10,27 @@ namespace Microsoft.Xbox.Services
     {
         public XboxLiveUser()
         {
-            this.userImpl = new UserImpl(SignInCompleted, SignOutCompleted, null, this);
+            this.userImpl = new UserImpl(null, this);
         }
 
         public XboxLiveUser(Windows.System.User systemUser)
         {
-            this.userImpl = new UserImpl(SignInCompleted, SignOutCompleted, systemUser, this);
+            var user = new UserImpl(systemUser, this);
+            user.SignInCompleted += (sender, args) =>
+            {
+                OnSignInCompleted(this);
+            };
+            user.SignOutCompleted += (sender, args) =>
+            {
+                OnSignOutCompleted(this);
+            };
+
+            this.userImpl = user;
         }
 
         public Task RefreshToken()
         {
-            return this.userImpl.InternalGetTokenAndSignatureAsync("GET", this.userImpl.AuthConfig.XboxLiveEndpoint, null, null, false, true).ContinueWith((taskAndSignatureResultTask) =>
-            {
-                if (taskAndSignatureResultTask.Exception != null)
-                {
-                    throw taskAndSignatureResultTask.Exception;
-                }
-            });
+            return this.userImpl.InternalGetTokenAndSignatureAsync("GET", this.userImpl.AuthConfig.XboxLiveEndpoint, null, null, false, true);
         }
 
         public Windows.System.User SystemUser

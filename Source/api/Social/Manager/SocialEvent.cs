@@ -1,21 +1,20 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
+
 namespace Microsoft.Xbox.Services.Social.Manager
 {
     using global::System;
     using global::System.Collections.Generic;
 
-    using Microsoft.Xbox.Services.System;
-
     public class SocialEvent
     {
-        public SocialEvent(SocialEventType type, XboxLiveUser user, IList<ulong> usersAffected, XboxSocialUserGroup groupAffected = null)
+        public SocialEvent(SocialEventType type, XboxLiveUser user, IList<ulong> usersAffected = null, XboxSocialUserGroup groupAffected = null, Exception exception = null)
         {
             this.EventType = type;
             this.User = user;
             this.UsersAffected = usersAffected;
             this.GroupAffected = groupAffected;
+            this.Exception = exception;
         }
 
         public SocialEventType EventType { get; private set; }
@@ -24,8 +23,8 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
         public IList<ulong> UsersAffected { get; private set; }
 
-        public XboxSocialUserGroup GroupAffected { get; set; }
+        public XboxSocialUserGroup GroupAffected { get; private set; }
 
-        public Exception Exception { get; set; }
+        public Exception Exception { get; private set; }
     }
 }
