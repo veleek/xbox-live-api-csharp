@@ -30,7 +30,6 @@ namespace Microsoft.Xbox.Services.System
         public string Privileges { get; set; }
         public string WebAccountId { get; set; }
         public AuthConfig AuthConfig { get; set; }
-        public WeakReference<IXboxLiveUser> UserWeakref { get; set; }
 
         public Task<SignInResult> SignInImpl(bool showUI, bool forceRefresh)
         {
