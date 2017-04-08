@@ -10,6 +10,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
     using global::System.Threading;
     using global::System.Threading.Tasks;
 
+    using Microsoft.Xbox.Services;
     using Microsoft.Xbox.Services.Presence;
     using Microsoft.Xbox.Services.RealTimeActivity;
     using Microsoft.Xbox.Services.System;
@@ -20,7 +21,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
         private static readonly TimeSpan RefreshDuration = TimeSpan.FromSeconds(30);
 
-        private readonly XboxLiveContext context;
         private readonly XboxLiveUser localUser;
         private readonly SocialManagerExtraDetailLevel detailLevel;
 
@@ -53,8 +53,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
             this.localUser = localUser;
             this.detailLevel = detailLevel;
 
-            this.context = new XboxLiveContext(this.localUser);
-            this.peopleHubService = new PeopleHubService(this.context.Settings, this.context.AppConfig);
+            this.peopleHubService = new PeopleHubService();
             this.eventQueue = new EventQueue(this.localUser);
             this.internalEventQueue = new InternalEventQueue();
         }
@@ -73,7 +72,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
         {
             get
             {
-                return this.context.AppConfig.TitleId;
+                return XboxLive.Instance.AppConfig.TitleId;
             }
         }
 

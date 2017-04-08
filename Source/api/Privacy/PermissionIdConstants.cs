@@ -10,92 +10,20 @@ namespace Microsoft.Xbox.Services.Privacy
 {
     public class PermissionIdConstants
     {
-        public PermissionIdConstants() {
-        }
-
-        public static string ViewTargetUserCreatedContent
-        {
-            get;
-            private set;
-        }
-
-        public static string BroadcastWithTwitch
-        {
-            get;
-            private set;
-        }
-
-        public static string PlayMultiplayer
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetMusicStatus
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetVideoStatus
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetPresence
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetExerciseInfo
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetMusicHistory
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetVideoHistory
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetGameHistory
-        {
-            get;
-            private set;
-        }
-
-        public static string ViewTargetProfile
-        {
-            get;
-            private set;
-        }
-
-        public static string CommunicateUsingVoice
-        {
-            get;
-            private set;
-        }
-
-        public static string CommunicateUsingVideo
-        {
-            get;
-            private set;
-        }
-
-        public static string CommunicateUsingText
-        {
-            get;
-            private set;
-        }
+        public const string ViewTargetUserCreatedContent = "ViewTargetUserCreatedContent";
+        public const string BroadcastWithTwitch = "BroadcastWithTwitch";
+        public const string PlayMultiplayer = "PlayMultiplayer";
+        public const string ViewTargetMusicStatus = "ViewTargetMusicStatus";
+        public const string ViewTargetVideoStatus = "ViewTargetVideoStatus";
+        public const string ViewTargetPresence = "ViewTargetPresence";
+        public const string ViewTargetExerciseInfo = "ViewTargetExerciseInfo";
+        public const string ViewTargetMusicHistory = "ViewTargetMusicHistory";
+        public const string ViewTargetVideoHistory = "ViewTargetVideoHistory";
+        public const string ViewTargetGameHistory = "ViewTargetGameHistory";
+        public const string ViewTargetProfile = "ViewTargetProfile";
+        public const string CommunicateUsingVoice = "CommunicateUsingVoice";
+        public const string CommunicateUsingVideo = "CommunicateUsingVideo";
+        public const string CommunicateUsingText = "CommunicateUsingText";
 
     }
 }

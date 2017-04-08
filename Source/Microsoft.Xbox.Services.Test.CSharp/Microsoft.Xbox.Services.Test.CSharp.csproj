@@ -49,7 +49,7 @@
     <Compile Include="System\UserImpl.cs" />
     <Compile Include="XboxLiveUser.cs" />
     <Compile Include="XboxLiveAppConfiguration.cs" />
-    <Compile Include="XboxLiveContext.cs" />
+    <Compile Include="XboxLive.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

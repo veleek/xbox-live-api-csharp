@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 namespace Microsoft.Xbox.Services.UnitTests.Stats
 {
@@ -15,14 +12,8 @@ namespace Microsoft.Xbox.Services.UnitTests.Stats
         [TestMethod]
         public void GetInstance()
         {
-            IStatsManager sm = StatsManager.Instance;
+            IStatsManager sm = XboxLive.Instance.StatsManager;
             Assert.IsNotNull(sm);
-        }
-
-        [TestMethod]
-        public void AddLocalUser()
-        {
-            StatsManager.Instance.AddLocalUser(this.user);
         }
     }
 }

@@ -13,17 +13,15 @@ namespace Microsoft.Xbox.Services.Stats.Manager
 
     public class StatsService
     {
-        private readonly XboxLiveContextSettings settings;
         private readonly XboxLiveAppConfiguration config;
         private readonly JsonSerializerSettings serializerSettings;
 
         private readonly string statsReadEndpoint;
         private readonly string statsWriteEndpoint;
 
-        internal StatsService(XboxLiveContextSettings settings, XboxLiveAppConfiguration config)
+        internal StatsService()
         {
-            this.config = config;
-            this.settings = settings;
+            this.config = XboxLive.Instance.AppConfig;
             this.serializerSettings = new JsonSerializerSettings();
 
             this.statsReadEndpoint = config.GetEndpointForService("statsread");
@@ -38,7 +36,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
                 false
             );
 
-            XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "POST", this.statsWriteEndpoint, pathAndQuery);
+            XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(HttpMethod.Post, this.statsWriteEndpoint, pathAndQuery);
             var svdModel = new Models.StatsValueDocumentModel()
             {
                 Revision = ++statValuePostDocument.Revision,
@@ -68,7 +66,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
                 false
             );
 
-            XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "GET", this.statsReadEndpoint, pathAndQuery);
+            XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(HttpMethod.Get, this.statsReadEndpoint, pathAndQuery);
             return req.GetResponseWithAuth(user).ContinueWith(task =>
             {
                 XboxLiveHttpResponse response = task.Result;

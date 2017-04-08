@@ -5,9 +5,9 @@ namespace Microsoft.Xbox.Services
 {
     using global::System;
 
-    public class XboxLiveContextSettings
+    public class XboxLiveSettings
     {
-        public XboxLiveContextSettings()
+        public XboxLiveSettings()
         {
             this.DiagnosticsTraceLevel = XboxServicesDiagnosticsTraceLevel.Off;
         }
@@ -25,6 +25,8 @@ namespace Microsoft.Xbox.Services
         public TimeSpan HttpTimeout { get; set; }
 
         public XboxServicesDiagnosticsTraceLevel DiagnosticsTraceLevel { get; private set; }
+
+        public event EventHandler<XboxLiveLogCallEventArgs> LogCallRouted;
 
         public bool EnableServiceCallRoutedEvents { get; set; }
 

@@ -11,20 +11,15 @@ namespace Microsoft.Xbox.Services.Social
     {
         private readonly string profileEndpoint;
 
-        protected XboxLiveContextSettings settings;
-        protected XboxLiveContext context;
         protected XboxLiveAppConfiguration config;
 
-        internal ProfileService(XboxLiveAppConfiguration config, XboxLiveContext context, XboxLiveContextSettings settings)
+        internal ProfileService()
         {
-            this.config = config;
-            this.context = context;
-            this.settings = settings;
-
+            this.config = XboxLive.Instance.AppConfig;
             this.profileEndpoint = this.config.GetEndpointForService("profile");
         }
 
-        public Task<XboxUserProfile> GetUserProfileAsync(string xboxUserId)
+        public Task<XboxUserProfile> GetUserProfileAsync(XboxLiveUser user, string xboxUserId)
         {
             if (string.IsNullOrEmpty(xboxUserId))
             {
@@ -33,10 +28,10 @@ namespace Microsoft.Xbox.Services.Social
 
             List<string> profiles = new List<string> { xboxUserId };
 
-            return this.GetUserProfilesAsync(profiles).ContinueWith(task => task.Result[0]);
+            return this.GetUserProfilesAsync(user, profiles).ContinueWith(task => task.Result[0]);
         }
 
-        public Task<List<XboxUserProfile>> GetUserProfilesAsync(List<string> xboxUserIds)
+        public Task<List<XboxUserProfile>> GetUserProfilesAsync(XboxLiveUser user, List<string> xboxUserIds)
         {
             if (xboxUserIds == null)
             {
@@ -47,7 +42,7 @@ namespace Microsoft.Xbox.Services.Social
                 throw new ArgumentOutOfRangeException("xboxUserIds", "Empty list of user ids");
             }
 
-            if (XboxLiveContext.UseMockServices)
+            if (XboxLive.UseMockServices)
             {
                 Random rand = new Random();
                 List<XboxUserProfile> outputUsers = new List<XboxUserProfile>(xboxUserIds.Count);
@@ -73,13 +68,13 @@ namespace Microsoft.Xbox.Services.Social
             }
             else
             {
-                XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(this.settings, "POST", profileEndpoint, "/users/batch/profile/settings");
+                XboxLiveHttpRequest req = XboxLiveHttpRequest.Create(HttpMethod.Post, profileEndpoint, "/users/batch/profile/settings");
 
                 req.ContractVersion = "2";
                 req.ContentType = "application/json; charset=utf-8";
                 Models.ProfileSettingsRequest reqBodyObject = new Models.ProfileSettingsRequest(xboxUserIds, true);
                 req.RequestBody = JsonSerialization.ToJson(reqBodyObject);
-                return req.GetResponseWithAuth(this.context.User).ContinueWith(task =>
+                return req.GetResponseWithAuth(user).ContinueWith(task =>
                 {
                     XboxLiveHttpResponse response = task.Result;
                     Models.ProfileSettingsResponse responseBody = new Models.ProfileSettingsResponse();

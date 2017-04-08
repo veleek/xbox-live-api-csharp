@@ -19,17 +19,17 @@ namespace Microsoft.Xbox.Services
         private const string RangeHeaderName = "Range";
         private const string ContentLengthHeaderName = "Content-Length";
 
-        private readonly XboxLiveContextSettings contextSettings;
+        private readonly XboxLiveSettings contextSettings;
         internal readonly HttpWebRequest webRequest;
         internal readonly Dictionary<string, string> customHeaders = new Dictionary<string, string>();
 
         internal bool longHttpCall;
 
-        internal XboxLiveHttpRequest(XboxLiveContextSettings settings, string method, string serverName, string pathQueryFragment)
+        internal XboxLiveHttpRequest(string method, string serverName, string pathQueryFragment)
         {
             this.Method = method;
             this.Url = serverName + pathQueryFragment;
-            this.contextSettings = settings;
+            this.contextSettings = XboxLive.Instance.Settings;
             this.webRequest = (HttpWebRequest)WebRequest.Create(new Uri(this.Url));
             this.webRequest.Method = method;
 
@@ -217,11 +217,11 @@ namespace Microsoft.Xbox.Services
             }
         }
 
-        public static XboxLiveHttpRequest Create(XboxLiveContextSettings settings, string httpMethod, string serverName, string pathQueryFragment)
+        public static XboxLiveHttpRequest Create(string httpMethod, string serverName, string pathQueryFragment)
         {
-            return XboxLiveContext.UseMockHttp ?
-                new MockXboxLiveHttpRequest(settings, httpMethod, serverName, pathQueryFragment) :
-                new XboxLiveHttpRequest(settings, httpMethod, serverName, pathQueryFragment);
+            return XboxLive.UseMockHttp ?
+                new MockXboxLiveHttpRequest(httpMethod, serverName, pathQueryFragment) :
+                new XboxLiveHttpRequest(httpMethod, serverName, pathQueryFragment);
         }
 
         public void SetRangeHeader(uint startByte, uint endByte)

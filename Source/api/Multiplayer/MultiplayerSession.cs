@@ -10,12 +10,9 @@ namespace Microsoft.Xbox.Services.Multiplayer
 {
     public class MultiplayerSession
     {
-        public MultiplayerSession(Microsoft.Xbox.Services.XboxLiveContext xboxLiveContext, MultiplayerSessionReference multiplayerSessionReference) {
-        }
-        public MultiplayerSession(Microsoft.Xbox.Services.XboxLiveContext xboxLiveContext, MultiplayerSessionReference multiplayerSessionReference, uint maxMembersInSession, MultiplayerSessionVisibility multiplayerSessionVisibility, string[] initiatorXboxUserIds, string sessionCustomConstantsJson) {
-        }
-        public MultiplayerSession(Microsoft.Xbox.Services.XboxLiveContext xboxLiveContext) {
-        }
+        public MultiplayerSession(string xboxUserId, MultiplayerSessionReference multiplayerSessionReference) {}
+        public MultiplayerSession(string xboxUserId, MultiplayerSessionReference multiplayerSessionReference, uint maxMembersInSession, MultiplayerSessionVisibility multiplayerSessionVisibility, string[] initiatorXboxUserIds, string sessionCustomConstantsJson) {}
+        public MultiplayerSession(string xboxUserId) {}
 
         public ulong ChangeNumber
         {
@@ -242,7 +239,7 @@ namespace Microsoft.Xbox.Services.Multiplayer
             throw new NotImplementedException();
         }
 
-        public void _Init(Microsoft.Xbox.Services.XboxLiveContext xboxLiveContext, MultiplayerSessionReference multiplayerSessionReference, uint maxMembersInSession, MultiplayerSessionVisibility multiplayerSessionVisibility, string[] initiatorXboxUserIds, string sessionCustomConstantsJson)
+        public void _Init(string xboxUserId, MultiplayerSessionReference multiplayerSessionReference, uint maxMembersInSession, MultiplayerSessionVisibility multiplayerSessionVisibility, string[] initiatorXboxUserIds, string sessionCustomConstantsJson)
         {
             throw new NotImplementedException();
         }

@@ -44,7 +44,10 @@ namespace Microsoft.Xbox.Services
         {
             get
             {
-                return instance ?? (instance = new XboxSocialUserIdEqualityComparer());
+                lock (instance)
+                {
+                    return instance ?? (instance = new XboxSocialUserIdEqualityComparer());
+                }
             }
         }
 

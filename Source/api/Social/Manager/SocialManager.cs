@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
+
 namespace Microsoft.Xbox.Services.Social.Manager
 {
     using global::System;
@@ -14,6 +14,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
     {
         private static ISocialManager instance;
 
+        private static readonly object instanceLock = new object();
         private readonly Queue<SocialEvent> eventQueue = new Queue<SocialEvent>();
         private readonly List<XboxLiveUser> localUsers = new List<XboxLiveUser>();
 
@@ -25,11 +26,21 @@ namespace Microsoft.Xbox.Services.Social.Manager
         {
         }
 
-        public static ISocialManager Instance
+        internal static ISocialManager Instance
         {
             get
             {
-                return instance ?? (instance = XboxLiveContext.UseMockServices ? new MockSocialManager() : (ISocialManager)new SocialManager());
+                if (instance == null)
+                {
+                    lock (instanceLock)
+                    {
+                        if (instance == null)
+                        {
+                            instance = XboxLive.UseMockServices ? new MockSocialManager() : (ISocialManager)new SocialManager();
+                        }
+                    }
+                }
+                return instance;
             }
         }
 

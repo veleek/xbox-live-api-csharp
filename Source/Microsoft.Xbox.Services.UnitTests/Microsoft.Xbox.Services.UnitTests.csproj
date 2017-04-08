@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="CallBufferTimerTests.cs" />
     <Compile Include="Leaderboards\LeaderboardTests.cs" />
+    <Compile Include="Privacy\PrivacyTests.cs" />
     <Compile Include="Social\EventQueueTests.cs" />
     <Compile Include="Social\InternalEventQueueTests.cs" />
     <Compile Include="Social\PeopleHubTests.cs" />
@@ -76,13 +77,16 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Leaderboards\LeaderboardUT.json">
+    <Content Include="Leaderboards\MockDataForLeaderboardTests.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="TitleStorage\TitleStorageUT.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="packages.config" />
+    <Content Include="Privacy\MockDataForPrivacyTests.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="XboxServices.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

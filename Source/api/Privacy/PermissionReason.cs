@@ -8,20 +8,15 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Xbox.Services.Privacy
 {
-    public class PermissionDenyReason
+    using Newtonsoft.Json;
+
+    public class PermissionReason
     {
+        [JsonProperty("restrictedSetting")]
+        public string RestrictedSetting { get; set; }
 
-        public string RestrictedSetting
-        {
-            get;
-            private set;
-        }
-
-        public string Reason
-        {
-            get;
-            private set;
-        }
+        [JsonProperty("reason")]
+        public string Reason { get; set; }
 
     }
 }

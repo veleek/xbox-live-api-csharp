@@ -4,11 +4,11 @@
 namespace Microsoft.Xbox.Services
 {
 
-    public partial class XboxLiveContext
+    public partial class XboxLive
     {
         public static bool UseMockServices
         {
-            get { return false; }
+            get { return true; }
         }
 
         public static bool UseMockHttp

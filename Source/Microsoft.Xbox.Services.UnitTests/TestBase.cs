@@ -13,7 +13,6 @@ namespace Microsoft.Xbox.Services.UnitTests
     {
         private readonly Random rng = new Random();
         public XboxLiveUser user;
-        public XboxLiveContext context;
 
         public TestContext TestContext { get; set; }
 
@@ -27,7 +26,6 @@ namespace Microsoft.Xbox.Services.UnitTests
             string gamertag = "Gamer " + xuid;
 
             this.user = new XboxLiveUser();
-            this.context = new XboxLiveContext(this.user);
         }
     }
 }

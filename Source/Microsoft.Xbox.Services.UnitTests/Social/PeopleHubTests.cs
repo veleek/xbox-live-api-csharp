@@ -17,7 +17,7 @@ namespace Microsoft.Xbox.Services.UnitTests.Social
         public override void TestInitialize()
         {
             base.TestInitialize();
-            this.service = new PeopleHubService(context.Settings, context.AppConfig);
+            this.service = new PeopleHubService();
         }
 
         [TestMethod]

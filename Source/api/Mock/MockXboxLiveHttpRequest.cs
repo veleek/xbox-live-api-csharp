@@ -12,7 +12,7 @@ namespace Microsoft.Xbox.Services
     {
         public static string MockDataPath;
 
-        public MockXboxLiveHttpRequest(XboxLiveContextSettings settings, string method, string serverName, string pathQueryFragment) : base(settings, method, serverName, pathQueryFragment)
+        public MockXboxLiveHttpRequest(string method, string serverName, string pathQueryFragment) : base(method, serverName, pathQueryFragment)
         {
         }
 

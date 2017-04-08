@@ -20,7 +20,7 @@ namespace Microsoft.Xbox.Services.System
 
         public Task<SignInResult> SignInImpl(bool showUI, bool forceRefresh)
         {
-            if (XboxLiveContext.UseMockServices)
+            if (XboxLive.UseMockServices)
             {
                 this.IsSignedIn = true;
                 this.Gamertag = "Fake User";
@@ -34,7 +34,7 @@ namespace Microsoft.Xbox.Services.System
 
         public Task<TokenAndSignatureResult> InternalGetTokenAndSignatureAsync(string httpMethod, string url, string headers, byte[] body, bool promptForCredentialsIfNeeded, bool forceRefresh)
         {
-            if (XboxLiveContext.UseMockServices)
+            if (XboxLive.UseMockServices)
             {
                 return Task.FromResult(new TokenAndSignatureResult
                 {

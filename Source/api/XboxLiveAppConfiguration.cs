@@ -11,13 +11,24 @@ namespace Microsoft.Xbox.Services
     {
         public const string FileName = "XboxServices.config";
 
+        private static readonly object instanceLock = new object();
         private static XboxLiveAppConfiguration instance;
 
         public static XboxLiveAppConfiguration Instance
         {
             get
             {
-                return instance ?? (instance = Load());
+                if (instance == null)
+                {
+                    lock (instanceLock)
+                    {
+                        if (instance == null)
+                        {
+                            instance = Load();
+                        }
+                    }
+                }
+                return instance;
             }
         }
 
@@ -65,7 +76,7 @@ namespace Microsoft.Xbox.Services
             {
                 // If we're unable to load the file for some reason, we can just use an empty file
                 // if mock data is enable.
-                if (XboxLiveContext.UseMockServices || XboxLiveContext.UseMockHttp)
+                if (XboxLive.UseMockServices || XboxLive.UseMockHttp)
                 {
                     return new XboxLiveAppConfiguration();
                 }

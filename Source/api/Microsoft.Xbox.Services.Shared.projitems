@@ -51,6 +51,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)GameServerPlatform\GameVariant.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GameServerPlatform\QualityOfServiceServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Leaderboard\LeaderboardStatType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Privacy\IPrivacyService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Privacy\Models\PrivacySettingsRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Shared\IXboxWebsocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SignInCompletedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\LeaderboardResultEventArgs.cs" />
@@ -165,7 +167,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Presence\UserPresenceState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\MultiplePermissionsCheckResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\PermissionCheckResult.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Privacy\PermissionDenyReason.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Privacy\PermissionReason.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\PermissionIdConstants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\PrivacyService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RealTimeActivity\RealTimeActivityConnectionState.cs" />
@@ -253,13 +255,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)UserStatistics\UserStatisticsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveAppConfiguration.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XboxLiveContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveContextRecommendedSetting.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)XboxLiveContextSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XboxLiveSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveContextThrottleSetting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveHttpRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveHttpResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveLogCallEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)XboxLive.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxLiveUser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxServiceCallRoutedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)XboxServicesDiagnosticsTraceLevel.cs" />

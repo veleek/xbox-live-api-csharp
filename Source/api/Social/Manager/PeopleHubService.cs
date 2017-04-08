@@ -15,14 +15,12 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
     internal class PeopleHubService
     {
-        private readonly XboxLiveContextSettings httpCallSettings;
         private readonly XboxLiveAppConfiguration appConfig;
         private readonly string peopleHubEndpoint;
 
-        public PeopleHubService(XboxLiveContextSettings httpCallSettings, XboxLiveAppConfiguration appConfig)
+        internal PeopleHubService()
         {
-            this.httpCallSettings = httpCallSettings;
-            this.appConfig = appConfig;
+            this.appConfig = XboxLive.Instance.AppConfig;
             this.peopleHubEndpoint = appConfig.GetEndpointForService("peoplehub");
         }
 
@@ -53,7 +51,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             path += "presenceDetail";
 
             XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(
-                this.httpCallSettings,
                 HttpMethod.Get,
                 this.peopleHubEndpoint,
                 path);
@@ -98,7 +95,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             bool isBatch = xboxLiveUsers != null && xboxLiveUsers.Count > 0;
             string pathAndQuery = this.CreateSocialGraphSubpath(user.XboxUserId, decorations, relationshipType, isBatch);
             XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(
-                this.httpCallSettings,
                 isBatch ? HttpMethod.Post : HttpMethod.Get,
                 this.peopleHubEndpoint,
                 pathAndQuery);

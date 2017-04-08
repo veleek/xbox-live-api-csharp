@@ -8,26 +8,18 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Xbox.Services.Privacy
 {
+    using Newtonsoft.Json;
+
     public class PermissionCheckResult
     {
+        [JsonProperty("reasons")]
+        public IList<PermissionReason> Reasons { get; set; }
 
-        public IList<PermissionDenyReason> DenyReasons
-        {
-            get;
-            private set;
-        }
+        [JsonProperty("permissionRequested")]
+        public string PermissionRequested { get; set; }
 
-        public string PermissionRequested
-        {
-            get;
-            private set;
-        }
-
-        public bool IsAllowed
-        {
-            get;
-            private set;
-        }
+        [JsonProperty("isAllowed")]
+        public bool IsAllowed { get; set; }
 
     }
 }

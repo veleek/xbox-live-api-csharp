@@ -10,6 +10,7 @@ namespace UWPIntegration
     using Windows.UI.Xaml;
     using Windows.UI.Xaml.Controls;
 
+    using Microsoft.Xbox;
     using Microsoft.Xbox.Services;
     using Microsoft.Xbox.Services.Leaderboard;
     using Microsoft.Xbox.Services.Social.Manager;
@@ -51,43 +52,47 @@ namespace UWPIntegration
 
         public XboxLiveUser User
         {
-            get
-            {
-                return this.user;
-            }
+            get { return this.user; }
+        }
+
+        public IStatsManager StatsManager
+        {
+            get { return XboxLive.Instance.StatsManager; }
         }
 
         private async void SignInButton_Click(object sender, RoutedEventArgs e)
         {
-            var signInResult = await this.user.SignInAsync();
+            var signInResult = await this.User.SignInAsync();
 
             await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 if (signInResult.Status == SignInStatus.Success)
                 {
                     this.OnPropertyChanged("User");
-                    StatsManager.Instance.AddLocalUser(this.user);
-                    SocialManager.Instance.AddLocalUser(this.user, SocialManagerExtraDetailLevel.None);
+                    this.StatsManager.AddLocalUser(this.User);
                 }
             });
         }
 
         private void globalLeaderboardButton_Click(object sender, RoutedEventArgs e)
         {
-            if (this.user.IsSignedIn)
+            if (this.User.IsSignedIn)
             {
+                this.StatsManager.RequestFlushToService(this.User, true);
+                this.StatsManager.DoWork();
+
                 LeaderboardQuery query = new LeaderboardQuery
                 {
                     MaxItems = 3,
                     StatName = "jumps"
                 };
-                StatsManager.Instance.GetLeaderboard(this.user, query);
+                this.StatsManager.GetLeaderboard(this.User, query);
             }
         }
 
         private void socialLeaderboardButton_Click(object sender, RoutedEventArgs e)
         {
-            if (this.user.IsSignedIn)
+            if (this.User.IsSignedIn)
             {
                 LeaderboardQuery query = new LeaderboardQuery
                 {
@@ -95,29 +100,29 @@ namespace UWPIntegration
                     SocialGroup = "all",
                     StatName = "headshots"
                 };
-                StatsManager.Instance.GetLeaderboard(this.user, query);
+                this.StatsManager.GetLeaderboard(this.User, query);
             }
         }
 
         private void WriteGlobalStats_Click(object sender, RoutedEventArgs e)
         {
-            if (!this.user.IsSignedIn) return;
-            StatsManager.Instance.SetStatAsInteger(this.user, "jumps", ++this.jumps);
+            if (!this.User.IsSignedIn) return;
+            this.StatsManager.SetStatAsInteger(this.User, "jumps", ++this.jumps);
         }
 
         private void WriteSocialStats_Click(object sender, RoutedEventArgs e)
         {
-            if (!this.user.IsSignedIn) return;
-            StatsManager.Instance.SetStatAsInteger(this.user, "headshots", ++this.headshots);
+            if (!this.User.IsSignedIn) return;
+            this.StatsManager.SetStatAsInteger(this.User, "headshots", ++this.headshots);
         }
 
         private void NextLb_Click(object sender, RoutedEventArgs e)
         {
-            if (!this.user.IsSignedIn) return;
+            if (!this.User.IsSignedIn) return;
 
             if (this.LeaderboardResult.HasNext)
             {
-                StatsManager.Instance.GetLeaderboard(this.user, this.LeaderboardResult.NextQuery);
+                this.StatsManager.GetLeaderboard(this.User, this.LeaderboardResult.NextQuery);
             }
         }
 
@@ -125,10 +130,10 @@ namespace UWPIntegration
         {
             while (true)
             {
-                if (this.user.IsSignedIn)
+                if (this.User.IsSignedIn)
                 {
                     // Perform the long running do work task on a background thread.
-                    var doWorkTask = Task.Run(() => { return StatsManager.Instance.DoWork(); });
+                    var doWorkTask = Task.Run(() => { return this.StatsManager.DoWork(); });
 
                     List<StatEvent> events = await doWorkTask;
                     foreach (StatEvent ev in events)
@@ -142,21 +147,21 @@ namespace UWPIntegration
                         }
                     }
 
-                    var statNames = StatsManager.Instance.GetStatNames(this.user);
+                    var statNames = this.StatsManager.GetStatNames(this.User);
                     if (statNames.Count > 0)
                     {
                         foreach (var stat in statNames)
                         {
                             if (string.Equals(stat, "headshots"))
                             {
-                                this.headshots = StatsManager.Instance.GetStat(this.user, "headshots").AsInteger();
+                                this.headshots = this.StatsManager.GetStat(this.User, "headshots").AsInteger();
                             }
                             else if (string.Equals(stat, "jumps"))
                             {
-                                this.jumps = StatsManager.Instance.GetStat(this.user, "jumps").AsInteger();
+                                this.jumps = this.StatsManager.GetStat(this.User, "jumps").AsInteger();
                             }
                         }
-                        this.StatsData.Text = string.Join(Environment.NewLine, statNames.Select(n => StatsManager.Instance.GetStat(this.user, n)).Select(s => $"{s.Name} ({s.Type}) = {s.Value}"));
+                        this.StatsData.Text = string.Join(Environment.NewLine, statNames.Select(n => this.StatsManager.GetStat(this.User, n)).Select(s => $"{s.Name} ({s.Type}) = {s.Value}"));
                     }
                 }
 

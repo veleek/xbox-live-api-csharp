@@ -4,14 +4,11 @@
 namespace Microsoft.Xbox.Services.UnitTests.Leaderboards
 {
     using global::System;
-    using global::System.Collections.Generic;
     using global::System.Threading.Tasks;
+    using Newtonsoft.Json.Linq;
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.Xbox.Services.Leaderboard;
-
-    using Newtonsoft.Json.Linq;
-    using Services.Stats.Manager;
 
     [TestClass]
     public class LeaderboardTests : TestBase
@@ -22,13 +19,14 @@ namespace Microsoft.Xbox.Services.UnitTests.Leaderboards
         public override void TestInitialize()
         {
             base.TestInitialize();
-            MockXboxLiveData.Load(Environment.CurrentDirectory + "\\Leaderboards\\LeaderboardUT.json");
-            this.leaderboardService = new LeaderboardService(new XboxLiveContextSettings(), XboxLiveAppConfiguration.Instance);
+            MockXboxLiveData.Load(Environment.CurrentDirectory + "\\Leaderboards\\MockDataForLeaderboardTests.json");
+            this.leaderboardService = new LeaderboardService();
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
+            XboxLive.Instance.Dispose();
         }
 
         private static void VerifyLeaderboardColumn(LeaderboardColumn column, JObject columnToVerify)
@@ -80,7 +78,7 @@ namespace Microsoft.Xbox.Services.UnitTests.Leaderboards
             MockXboxLiveData.MockRequestData mockRequestData = MockXboxLiveData.MockResponses["defaultLeaderboardData"];
             JObject responseJson = JObject.Parse(mockRequestData.Response.ResponseBodyString);
             Assert.AreEqual("GET", mockRequestData.Request.Method);
-            Assert.AreEqual("https://leaderboards.xboxlive.com/scids/00000000-0000-0000-0000-0000694f5acb/leaderboards/stat(Jumps)", mockRequestData.Request.Url);
+            Assert.AreEqual("https://leaderboards.xboxlive.com/scids/00000000-0000-0000-0000-0000694f5acb/leaderboards/stat(Jumps)?maxItems=100", mockRequestData.Request.Url);
             Assert.IsTrue(result.HasNext);
             VerifyLeaderboardResult(result, responseJson);
 

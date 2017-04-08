@@ -8,20 +8,25 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Xbox.Services.Privacy
 {
+    using Newtonsoft.Json;
+
+    internal class UserObject
+    {
+        [JsonProperty("xuid")]
+        public string Xuid { get; set; }
+    }
+
     public class MultiplePermissionsCheckResult
     {
+        [JsonProperty("permissions")]
+        public IList<PermissionCheckResult> Permissions { get; set; }
 
-        public IList<PermissionCheckResult> Items
-        {
-            get;
-            private set;
-        }
+        [JsonProperty("user")]
+        private UserObject User { get; set; }
 
         public string XboxUserId
         {
-            get;
-            private set;
+            get { return this.User.Xuid; }
         }
-
     }
 }

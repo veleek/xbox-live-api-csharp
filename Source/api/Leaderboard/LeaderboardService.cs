@@ -14,13 +14,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
 
         private static readonly Uri leaderboardsBaseUri = new Uri("https://leaderboards.xboxlive.com");
 
-        private readonly XboxLiveContextSettings xboxLiveContextSettings;
         private readonly XboxLiveAppConfiguration appConfig;
 
-        internal LeaderboardService(XboxLiveContextSettings xboxLiveContextSettings, XboxLiveAppConfiguration appConfig)
+        internal LeaderboardService()
         {
-            this.xboxLiveContextSettings = xboxLiveContextSettings;
-            this.appConfig = appConfig;
+            this.appConfig = XboxLive.Instance.AppConfig;
         }
 
         /// <inheritdoc />
@@ -42,7 +40,7 @@ namespace Microsoft.Xbox.Services.Leaderboard
                 requestPath = CreateSocialLeaderboardUrlPath(this.appConfig.PrimaryServiceConfigId, query.StatName, user.XboxUserId, query.MaxItems, skipToXboxUserId, query.SkipResultsToRank, query.ContinuationToken, query.SocialGroup);
             }
 
-            XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(this.xboxLiveContextSettings, HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
+            XboxLiveHttpRequest request = XboxLiveHttpRequest.Create(HttpMethod.Get, leaderboardsBaseUri.ToString(), requestPath);
             request.ContractVersion = leaderboardApiContract;
             return request.GetResponseWithAuth(user)
                 .ContinueWith(

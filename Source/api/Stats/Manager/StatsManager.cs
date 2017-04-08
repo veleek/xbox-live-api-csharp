@@ -13,6 +13,7 @@ namespace Microsoft.Xbox.Services.Stats.Manager
 
     public class StatsManager : IStatsManager
     {
+        private static readonly object instanceLock = new object();
         private static readonly TimeSpan TimePerCall = new TimeSpan(0, 0, 30);
         private static readonly TimeSpan StatsPollTime = new TimeSpan(0, 5, 0);
         private static IStatsManager instance;
@@ -33,11 +34,21 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             }
         }
 
-        public static IStatsManager Instance
+        internal static IStatsManager Instance
         {
             get
             {
-                return instance ?? (instance = XboxLiveContext.UseMockServices ? new MockStatsManager() : (IStatsManager)new StatsManager());
+                if (instance == null)
+                {
+                    lock (instanceLock)
+                    {
+                        if (instance == null)
+                        {
+                            instance = XboxLive.UseMockServices ? new MockStatsManager() : (IStatsManager)new StatsManager();
+                        }
+                    }
+                }
+                return instance;
             }
         }
 
@@ -52,9 +63,8 @@ namespace Microsoft.Xbox.Services.Stats.Manager
             this.statPriorityTimer = new CallBufferTimer(TimePerCall);
             this.statPriorityTimer.TimerCompleteEvent += this.TimerCompleteCallback;
 
-            XboxLiveContextSettings settings = new XboxLiveContextSettings();
-            this.statsService = new StatsService(settings, XboxLiveAppConfiguration.Instance);
-            this.leaderboardService = new LeaderboardService(settings, XboxLiveAppConfiguration.Instance);
+            this.statsService = new StatsService();
+            this.leaderboardService = new LeaderboardService();
 
             RunFlushTimer();
         }
