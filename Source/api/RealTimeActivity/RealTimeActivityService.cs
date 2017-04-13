@@ -11,11 +11,11 @@ namespace Microsoft.Xbox.Services.RealTimeActivity
     public class RealTimeActivityService
     {
 
-        public event EventHandler<RealTimeActivityResyncEventArgs> RealTimeActivityResync;
+        //public event EventHandler<RealTimeActivityResyncEventArgs> RealTimeActivityResync;
 
-        public event EventHandler<RealTimeActivitySubscriptionErrorEventArgs> RealTimeActivitySubscriptionError;
+        //public event EventHandler<RealTimeActivitySubscriptionErrorEventArgs> RealTimeActivitySubscriptionError;
 
-        public event EventHandler<RealTimeActivityConnectionStateChangeEventArgs> RealTimeActivityConnectionStateChange;
+        //public event EventHandler<RealTimeActivityConnectionStateChangeEventArgs> RealTimeActivityConnectionStateChange;
 
 
         public void Activate()

@@ -10,9 +10,9 @@ namespace Microsoft.Xbox.Services.Multiplayer
     {
         public bool MultiplayerSubscriptionsEnabled { get; private set; }
 
-        public event EventHandler<MultiplayerSubscriptionLostEventArgs> MultiplayerSubscriptionLost;
+        //public event EventHandler<MultiplayerSubscriptionLostEventArgs> MultiplayerSubscriptionLost;
 
-        public event EventHandler<MultiplayerSessionChangeEventArgs> MultiplayerSessionChanged;
+        //public event EventHandler<MultiplayerSessionChangeEventArgs> MultiplayerSessionChanged;
 
         public Task<MultiplayerSession> WriteSessionAsync(MultiplayerSession multiplayerSession, MultiplayerSessionWriteMode multiplayerSessionWriteMode)
         {

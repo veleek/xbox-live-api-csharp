@@ -26,7 +26,7 @@ namespace Microsoft.Xbox.Services
 
         public XboxServicesDiagnosticsTraceLevel DiagnosticsTraceLevel { get; private set; }
 
-        public event EventHandler<XboxLiveLogCallEventArgs> LogCallRouted;
+        //public event EventHandler<XboxLiveLogCallEventArgs> LogCallRouted;
 
         public bool EnableServiceCallRoutedEvents { get; set; }
 

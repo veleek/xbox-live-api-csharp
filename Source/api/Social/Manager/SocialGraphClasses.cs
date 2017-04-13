@@ -12,15 +12,15 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
     internal class RtaTriggerTimer
     {
-        private static TimeSpan TIME_PER_CALL_MS;
-        private Action<List<string>, FireTimerCompletionContext> m_fCallback;
+        //private static TimeSpan TIME_PER_CALL_MS;
+        //private Action<List<string>, FireTimerCompletionContext> m_fCallback;
 
-        private bool m_iTaskInProgress;
-        private DateTime m_previousTime;
-        private bool m_queuedTask;
-        private Mutex m_timerLock;
-        private List<string> m_usersToCall;
-        private Dictionary<string, bool> m_usersToCallMap; // duplicating data to make lookup faster. SHould be a better way to do this
+        //private bool m_iTaskInProgress;
+        //private DateTime m_previousTime;
+        //private bool m_queuedTask;
+        //private Mutex m_timerLock;
+        //private List<string> m_usersToCall;
+        //private Dictionary<string, bool> m_usersToCallMap; // duplicating data to make lookup faster. SHould be a better way to do this
 
         public RtaTriggerTimer()
         {
@@ -47,23 +47,23 @@ namespace Microsoft.Xbox.Services.Social.Manager
         }
     }
 
-    internal struct UserGroupStatusChange
-    {
-        public IList<string> addGroup;
-        public IList<ulong> removeGroup;
-    }
+    //internal struct UserGroupStatusChange
+    //{
+    //    public IList<string> addGroup;
+    //    public IList<ulong> removeGroup;
+    //}
 
     internal struct FireTimerCompletionContext
     {
-        public bool isNull;
-        public uint context;
-        public int numObjects;
-        public TaskCompletionSource<object> tce;
+    //    public bool isNull;
+    //    public uint context;
+    //    public int numObjects;
+    //    public TaskCompletionSource<object> tce;
     }
 
-    internal struct XboxSocialUserSubscriptions
-    {
-        public DevicePresenceChangeSubscription DevicePresenceChangeSubscription;
-        public TitlePresenceChangeSubscription TitlePresenceChangeSubscription;
-    }
+    //internal struct XboxSocialUserSubscriptions
+    //{
+    //    public DevicePresenceChangeSubscription DevicePresenceChangeSubscription;
+    //    public TitlePresenceChangeSubscription TitlePresenceChangeSubscription;
+    //}
 }

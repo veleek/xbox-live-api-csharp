@@ -11,7 +11,7 @@ namespace Microsoft.Xbox.Services.UserStatistics
     public class UserStatisticsService
     {
 
-        public event EventHandler<StatisticChangeEventArgs> StatisticChanged;
+        //public event EventHandler<StatisticChangeEventArgs> StatisticChanged;
 
 
         public Task<UserStatisticsResult> GetSingleUserStatisticsAsync(string xboxUserId, string serviceConfigurationId, string[] statisticNames)

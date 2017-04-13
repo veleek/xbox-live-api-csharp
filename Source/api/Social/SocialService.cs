@@ -11,7 +11,7 @@ namespace Microsoft.Xbox.Services.Social
     public class SocialService
     {
 
-        public event EventHandler<SocialRelationshipChangeEventArgs> SocialRelationshipChanged;
+        //public event EventHandler<SocialRelationshipChangeEventArgs> SocialRelationshipChanged;
 
 
         public Task<XboxSocialRelationshipResult> GetSocialRelationshipsAsync(SocialRelationship socialRelationshipFilter, uint startIndex, uint maxItems)
