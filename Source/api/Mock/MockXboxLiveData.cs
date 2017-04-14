@@ -13,6 +13,11 @@ namespace Microsoft.Xbox.Services
     {
         public static Dictionary<string, MockRequestData> MockResponses { get; set; }
 
+        static MockXboxLiveData()
+        {
+            MockResponses = new Dictionary<string, MockRequestData>();
+        }
+
         public static void Load(string path)
         {
             if (!File.Exists(path))

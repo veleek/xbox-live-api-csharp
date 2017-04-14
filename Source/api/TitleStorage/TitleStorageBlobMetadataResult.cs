@@ -65,8 +65,7 @@ namespace Microsoft.Xbox.Services.TitleStorage
             string json,  
             TitleStorageType storageType,
             XboxLiveUser xboxUser,
-            string blobPath
-            )
+            string blobPath)
         { 
             var titleStorageBlobMetadataResultInfo = JsonSerialization.FromJson<TitleStorageBlobMetadataResultInfo>(json);
 

@@ -54,6 +54,11 @@ namespace Microsoft.Xbox.Services.Leaderboard
         {
             XboxLiveHttpResponse response = responseTask.Result;
 
+            if (response.HttpStatus != 200)
+            {
+                throw new XboxException("Leaderboard request failed with " + response.HttpStatus);
+            }
+
             LeaderboardResponse lbResponse = JsonSerialization.FromJson<LeaderboardResponse>(response.ResponseBodyString);
 
             IList<LeaderboardColumn> columns = new List<LeaderboardColumn> { lbResponse.LeaderboardInfo.Column };

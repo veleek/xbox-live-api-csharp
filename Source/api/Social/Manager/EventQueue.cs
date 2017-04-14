@@ -8,14 +8,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
     internal class EventQueue : IEnumerable<SocialEvent>
     {
-        private Queue<SocialEvent> events = new Queue<SocialEvent>();
-
-        public EventQueue(XboxLiveUser user)
-        {
-            this.State = EventState.Clear;
-        }
-
-        public EventState State { get; private set; }
+        private readonly Queue<SocialEvent> events = new Queue<SocialEvent>();
 
         public void Enqueue(InternalSocialEvent internalEvent, XboxLiveUser user)
         {
@@ -52,8 +45,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
             SocialEvent evt = new SocialEvent(eventType, user, internalEvent.UserIdsAffected);
             this.events.Enqueue(evt);
-
-            this.State = EventState.ReadyToRead;
         }
 
         public int Count
@@ -62,11 +53,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             {
                 return this.events.Count;
             }
-        }
-
-        public void Clear()
-        {
-            this.events.Clear();
         }
 
         public IEnumerator<SocialEvent> GetEnumerator()

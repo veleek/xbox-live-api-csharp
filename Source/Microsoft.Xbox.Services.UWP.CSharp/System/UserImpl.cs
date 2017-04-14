@@ -11,20 +11,24 @@ namespace Microsoft.Xbox.Services.System
     using Windows.UI.Core;
 
     using global::System;
+    using global::System.Collections.Concurrent;
+   
     using global::System.Linq;
     using global::System.Text;
     using global::System.Threading.Tasks;
-    using global::System.Collections.Concurrent;
 
     internal class UserImpl : IUserImpl
     {
-        private static bool? isMultiUserSupported;
-        private static CoreDispatcher dispatcher;
+        public event EventHandler SignInCompleted;
+        public event EventHandler SignOutCompleted;
 
-        private WebAccountProvider provider;
-        private readonly object userImplLock = new object();
+        private static bool? isMultiUserApplication;
+        private static CoreDispatcher dispatcher;
         private static UserWatcher userWatcher;
-        private static ConcurrentDictionary<string, UserImpl> trackingUsers = new ConcurrentDictionary<string, UserImpl>();
+        private static readonly ConcurrentDictionary<string, UserImpl> trackingUsers = new ConcurrentDictionary<string, UserImpl>();
+
+        private readonly object userImplLock = new object();
+        private WebAccountProvider provider;
 
         public bool IsSignedIn { get; private set; }
         public string XboxUserId { get; private set; }
@@ -34,7 +38,6 @@ namespace Microsoft.Xbox.Services.System
         public string WebAccountId { get; private set; }
         public AuthConfig AuthConfig { get; private set; }
         public User CreationContext { get; private set; }
-        internal WeakReference UserWeakReference { get; private set; }
 
         public static CoreDispatcher Dispatcher
         {
@@ -44,32 +47,28 @@ namespace Microsoft.Xbox.Services.System
             }
         }
 
-        private readonly EventHandler<SignInCompletedEventArgs> signInCompleted;
-        private readonly EventHandler<SignOutCompletedEventArgs> signOutCompleted;
         private ThreadPoolTimer threadPoolTimer;
 
-        public UserImpl(EventHandler<SignInCompletedEventArgs> signInCompleted, EventHandler<SignOutCompletedEventArgs> signOutCompleted, User systemUser, XboxLiveUser xboxLiveuser)
+        public UserImpl(User systemUser)
         {
-            if (systemUser == null && IsMultiUserApplication())
+            if (IsMultiUserApplication)
             {
-                throw(new XboxException("Xbox Live User object is required to be constructed by a Windows.System.User object for a multi-user application."));
-            }
+                if (systemUser == null)
+                {
+                    throw new XboxException("Xbox Live User object is required to be constructed by a Windows.System.User object for a multi-user application.");
+                }
 
-            //Initiate user watcher
-            if (IsMultiUserApplication())
-            {
+                //Initiate user watcher
                 if (userWatcher == null)
                 {
-                    userWatcher = Windows.System.User.CreateWatcher();
+                    userWatcher = User.CreateWatcher();
                     userWatcher.Removed += UserWatcher_UserRemoved;
                 }
             }
 
-            this.signInCompleted = signInCompleted;
-            this.signOutCompleted = signOutCompleted;
             this.CreationContext = systemUser;
-            this.UserWeakReference = new WeakReference(xboxLiveuser);
 
+            // TODO: This config is broken.
             var appConfig = XboxLiveAppConfiguration.Instance;
             this.AuthConfig = new AuthConfig
             {
@@ -80,136 +79,123 @@ namespace Microsoft.Xbox.Services.System
             };
         }
 
-        public Task<SignInResult> SignInImpl(bool showUI, bool forceRefresh)
+        public async Task<SignInResult> SignInImpl(bool showUI, bool forceRefresh)
         {
-            var signInTask = this.InitializeProvider().ContinueWith((task) =>
+            await this.InitializeProviderAsync();
+
+            TokenAndSignatureResult result = await this.InternalGetTokenAndSignatureHelperAsync("GET", this.AuthConfig.XboxLiveEndpoint, "", null, showUI, false);
+            SignInStatus status = ConvertWebTokenRequestStatus(result.TokenRequestResult.ResponseStatus);
+
+            if (status != SignInStatus.Success)
             {
-                var tokenAndSigResult = this.InternalGetTokenAndSignatureHelper(
-                    "GET", this.AuthConfig.XboxLiveEndpoint,
-                    "",
-                    null,
-                    showUI,
-                    false
-                );
+                return new SignInResult(status);
+            }
 
-                if (tokenAndSigResult != null && tokenAndSigResult.XboxUserId != null && tokenAndSigResult.XboxUserId.Length != 0)
-                {
-                    if (string.IsNullOrEmpty(tokenAndSigResult.Token))
-                    {
-                        var xboxUserId = tokenAndSigResult.XboxUserId;
-                        // todo: set presence
-                    }
+            if (string.IsNullOrEmpty(result.Token))
+            {
+                // todo: set presence
+            }
 
-                    this.UserSignedIn(tokenAndSigResult.XboxUserId, tokenAndSigResult.Gamertag, tokenAndSigResult.AgeGroup,
-                        tokenAndSigResult.Privileges, tokenAndSigResult.WebAccountId);
+            this.UserSignedIn(result.XboxUserId, result.Gamertag, result.AgeGroup, result.Privileges, result.WebAccountId);
 
-                    return new SignInResult(SignInStatus.Success);
-                }
-
-                return this.ConvertWebTokenRequestStatus(tokenAndSigResult.TokenRequestResult);
-            });
-
-            return signInTask;
+            return new SignInResult(status);
         }
 
-        static private void UserWatcher_UserRemoved(UserWatcher sender, UserChangedEventArgs args)
+        private static void UserWatcher_UserRemoved(UserWatcher sender, UserChangedEventArgs args)
         {
             UserImpl signoutUser;
-            if (UserImpl.trackingUsers.TryGetValue(args.User.NonRoamableId, out signoutUser))
+            if (trackingUsers.TryGetValue(args.User.NonRoamableId, out signoutUser))
             {
                 signoutUser.UserSignedOut();
             }
         }
 
-        private Task InitializeProvider()
+        private async Task InitializeProviderAsync()
         {
             if (this.provider != null)
             {
-                return Task.FromResult<object>(null);
+                return;
             }
-
-            TaskCompletionSource<object> taskCompletion = new TaskCompletionSource<object>();
 
             if (!Dispatcher.HasThreadAccess)
             {
+                // There's no way to wait for a dispatcher call to finish if it's async, so we need to use a TaskCompletionSource.
+                TaskCompletionSource<WebAccountProvider> findProviderCompletionSource = new TaskCompletionSource<WebAccountProvider>();
+
                 // We're not on the UI thread, so we'll use the dispatcher to make our call.
-                IAsyncAction uiTask = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => this.InitializeProvider(taskCompletion));
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () => { findProviderCompletionSource.SetResult(await this.FindProvider()); });
+
+                this.provider = await findProviderCompletionSource.Task;
             }
             else
             {
                 // Otherwise just go ahead and make the call on this thread.
-                this.InitializeProvider(taskCompletion);
+                this.provider = await this.FindProvider();
             }
-
-            return taskCompletion.Task;
         }
 
-        private void InitializeProvider(TaskCompletionSource<object> completionSource)
+        private async Task<WebAccountProvider> FindProvider()
         {
-            IAsyncOperation<WebAccountProvider> providerTask;
+            WebAccountProvider accountProvider;
 
             if (this.CreationContext == null)
             {
-                providerTask = WebAuthenticationCoreManager.FindAccountProviderAsync("https://xsts.auth.xboxlive.com");
+                accountProvider = await WebAuthenticationCoreManager.FindAccountProviderAsync("https://xsts.auth.xboxlive.com");
             }
             else
             {
-                providerTask = WebAuthenticationCoreManager.FindAccountProviderAsync("https://xsts.auth.xboxlive.com", string.Empty, this.CreationContext);
+                accountProvider = await WebAuthenticationCoreManager.FindAccountProviderAsync("https://xsts.auth.xboxlive.com", string.Empty, this.CreationContext);
             }
 
-            providerTask.Completed = (webaccountProviderResult, state) => { this.FindAccountCompleted(webaccountProviderResult, state, completionSource); };
-        }
-
-        private void FindAccountCompleted(IAsyncOperation<WebAccountProvider> asyncInfo, AsyncStatus asyncStatus, TaskCompletionSource<object> completionSource)
-        {
-            this.provider = asyncInfo.GetResults();
-            if (this.provider == null)
+            if (accountProvider == null)
             {
-                completionSource.SetException(new Exception("XBL IDP is not found")); // todo: make xbox live exception
+                throw new XboxException("Unable to find Xbox Live Identity Provider");
             }
 
-            completionSource.SetResult(null);
+            return accountProvider;
         }
 
-        static private bool IsMultiUserApplication()
+        private static bool IsMultiUserApplication
         {
-            if (isMultiUserSupported == null)
+            get
             {
-                try
+                if (isMultiUserApplication == null)
                 {
-                    bool apiExist = Windows.Foundation.Metadata.ApiInformation.IsMethodPresent("Windows.System.UserPicker", "IsSupported");
-                    isMultiUserSupported = (apiExist && UserPicker.IsSupported());
-                }
-                catch (Exception)
-                {
-                    isMultiUserSupported = false;
-                }
-            }
-            return isMultiUserSupported == true;
-        }
-
-        public Task<TokenAndSignatureResult> InternalGetTokenAndSignatureAsync(string httpMethod, string url, string headers, byte[] body, bool promptForCredentialsIfNeeded, bool forceRefresh)
-        {
-            return Task.Factory.StartNew(() =>
-            {
-                var result = this.InternalGetTokenAndSignatureHelper(httpMethod, url, headers, body, promptForCredentialsIfNeeded, forceRefresh);
-                if (result.TokenRequestResult != null && result.TokenRequestResult.ResponseStatus == WebTokenRequestStatus.UserInteractionRequired)
-                {
-                    if (this.AuthConfig.XboxLiveEndpoint != null && url == this.AuthConfig.XboxLiveEndpoint && this.IsSignedIn)
+                    try
                     {
-                        this.UserSignedOut();
+                        bool apiExist = Windows.Foundation.Metadata.ApiInformation.IsMethodPresent("Windows.System.UserPicker", "IsSupported");
+                        isMultiUserApplication = (apiExist && UserPicker.IsSupported());
                     }
-                    else if (url != this.AuthConfig.XboxLiveEndpoint)
+                    catch (Exception)
                     {
-                        // todo: throw error
+                        isMultiUserApplication = false;
                     }
                 }
+                return isMultiUserApplication == true;
+            }
+        }
 
+        public async Task<TokenAndSignatureResult> InternalGetTokenAndSignatureAsync(string httpMethod, string url, string headers, byte[] body, bool promptForCredentialsIfNeeded, bool forceRefresh)
+        {
+            var result = await this.InternalGetTokenAndSignatureHelperAsync(httpMethod, url, headers, body, promptForCredentialsIfNeeded, forceRefresh);
+            if (result.TokenRequestResult == null || result.TokenRequestResult.ResponseStatus != WebTokenRequestStatus.UserInteractionRequired)
+            {
                 return result;
-            });
+            }
+
+            if (this.AuthConfig.XboxLiveEndpoint != null && url == this.AuthConfig.XboxLiveEndpoint && this.IsSignedIn)
+            {
+                this.UserSignedOut();
+            }
+            else if (url != this.AuthConfig.XboxLiveEndpoint)
+            {
+                // todo: throw error
+            }
+
+            return result;
         }
 
-        private TokenAndSignatureResult InternalGetTokenAndSignatureHelper(string httpMethod, string url, string headers, byte[] body, bool promptForCredentialsIfNeeded, bool forceRefresh)
+        private async Task<TokenAndSignatureResult> InternalGetTokenAndSignatureHelperAsync(string httpMethod, string url, string headers, byte[] body, bool promptForCredentialsIfNeeded, bool forceRefresh)
         {
             if (this.provider == null)
             {
@@ -242,7 +228,7 @@ namespace Microsoft.Xbox.Services.System
             }
 
             TokenAndSignatureResult tokenAndSignatureReturnResult = null;
-            var tokenResult = this.RequestTokenFromIDP(Dispatcher, promptForCredentialsIfNeeded, request);
+            var tokenResult = await RequestTokenFromIdpAsync(promptForCredentialsIfNeeded, request);
             try
             {
                 tokenAndSignatureReturnResult = this.ConvertWebTokenRequestResult(tokenResult);
@@ -260,54 +246,29 @@ namespace Microsoft.Xbox.Services.System
             return tokenAndSignatureReturnResult;
         }
 
-        private WebTokenRequestResult RequestTokenFromIDP(CoreDispatcher coreDispatcher, bool promptForCredentialsIfNeeded, WebTokenRequest request)
+        private static Task<WebTokenRequestResult> RequestTokenFromIdpAsync(bool promptForCredentialsIfNeeded, WebTokenRequest request)
         {
-            WebTokenRequestResult tokenResult = null;
-            if (coreDispatcher != null && promptForCredentialsIfNeeded)
+            if (!promptForCredentialsIfNeeded)
             {
-                TaskCompletionSource<object> completionSource = new TaskCompletionSource<object>();
-                var requestTokenTask = coreDispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                    () =>
+                return WebAuthenticationCoreManager.GetTokenSilentlyAsync(request).AsTask();
+            }
+
+            TaskCompletionSource<WebTokenRequestResult> webTokenRequestSource = new TaskCompletionSource<WebTokenRequestResult>();
+            IAsyncAction requestTokenTask = Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                async () =>
+                {
+                    try
                     {
-                        WebAuthenticationCoreManager.RequestTokenAsync(request).Completed = (info, status) =>
-                        {
-                            try
-                            {
-                                tokenResult = info.GetResults();
-                                completionSource.SetResult(null);
-                            }
-                            catch (Exception e)
-                            {
-                                completionSource.SetException(e);
-                            }
-                        };
-                    });
+                        WebTokenRequestResult result = await WebAuthenticationCoreManager.RequestTokenAsync(request);
+                        webTokenRequestSource.SetResult(result);
+                    }
+                    catch (Exception e)
+                    {
+                        webTokenRequestSource.SetException(e);
+                    }
+                });
 
-                completionSource.Task.Wait();
-                if (completionSource.Task.Exception != null)
-                {
-                    throw completionSource.Task.Exception;
-                }
-            }
-            else
-            {
-                IAsyncOperation<WebTokenRequestResult> getTokenTask;
-                TaskCompletionSource<WebTokenRequestResult> webTokenRequestSource = new TaskCompletionSource<WebTokenRequestResult>();
-                if (promptForCredentialsIfNeeded)
-                {
-                    getTokenTask = WebAuthenticationCoreManager.RequestTokenAsync(request);
-                }
-                else
-                {
-                    getTokenTask = WebAuthenticationCoreManager.GetTokenSilentlyAsync(request);
-                }
-
-                getTokenTask.Completed += (tokenTask, status) => webTokenRequestSource.SetResult(tokenTask.GetResults());
-
-                tokenResult = webTokenRequestSource.Task.Result;
-            }
-
-            return tokenResult;
+            return webTokenRequestSource.Task;
         }
 
         private TokenAndSignatureResult ConvertWebTokenRequestResult(WebTokenRequestResult tokenResult)
@@ -390,48 +351,43 @@ namespace Microsoft.Xbox.Services.System
                 this.WebAccountId = webAccountId;
 
                 this.IsSignedIn = true;
-                if (this.signInCompleted != null)
-                {
-                    this.signInCompleted(null, new SignInCompletedEventArgs(this.UserWeakReference));
-                }
             }
 
+            this.OnSignInCompleted();
+
             // We use user watcher for MUA, if it's SUA we use own checker for sign out event.
-            if (!IsMultiUserApplication())
+            if (!IsMultiUserApplication)
             {
-                TimeSpan delay = new TimeSpan(0, 0, 10);
-                this.threadPoolTimer = ThreadPoolTimer.CreatePeriodicTimer(new TimerElapsedHandler((source) => { this.CheckUserSignedOut(); }),
-                    delay
+                this.threadPoolTimer = ThreadPoolTimer.CreatePeriodicTimer(
+                    source => { this.CheckUserSignedOut(); },
+                    TimeSpan.FromSeconds(10)
                 );
             }
             else
             {
-                UserImpl.trackingUsers.TryAdd(this.CreationContext.NonRoamableId, this);
+                trackingUsers.TryAdd(this.CreationContext.NonRoamableId, this);
             }
         }
 
         private void UserSignedOut()
         {
-            bool isSignedIn = false;
+            if (!this.IsSignedIn)
+            {
+                return;
+            }
+
             lock (this.userImplLock)
             {
-                isSignedIn = this.IsSignedIn;
                 this.IsSignedIn = false;
             }
 
-            if (isSignedIn)
-            {
-                if (this.signOutCompleted != null)
-                {
-                    this.signOutCompleted(this, new SignOutCompletedEventArgs(this.UserWeakReference));
-                }
-            }
+            this.OnSignOutCompleted();
 
             lock (this.userImplLock)
             {
                 // Check again on isSignedIn flag, in case users signed in again in signOutHandlers callback,
                 // so we don't clean up the properties. 
-                if (!isSignedIn)
+                if (!this.IsSignedIn)
                 {
                     this.XboxUserId = null;
                     this.Gamertag = null;
@@ -442,7 +398,7 @@ namespace Microsoft.Xbox.Services.System
                     if (this.CreationContext != null)
                     {
                         UserImpl outResult;
-                        UserImpl.trackingUsers.TryRemove(this.CreationContext.NonRoamableId, out outResult);
+                        trackingUsers.TryRemove(this.CreationContext.NonRoamableId, out outResult);
                     }
 
                     if (this.threadPoolTimer != null)
@@ -455,15 +411,14 @@ namespace Microsoft.Xbox.Services.System
 
         private void CheckUserSignedOut()
         {
+            if (!this.IsSignedIn) return;
+
             try
             {
-                if (this.IsSignedIn)
+                var signedInAccount = WebAuthenticationCoreManager.FindAccountAsync(this.provider, this.WebAccountId);
+                if (signedInAccount == null)
                 {
-                    var signedInAccount = WebAuthenticationCoreManager.FindAccountAsync(this.provider, this.WebAccountId);
-                    if (signedInAccount == null)
-                    {
-                        this.UserSignedOut();
-                    }
+                    this.UserSignedOut();
                 }
             }
             catch (Exception)
@@ -472,15 +427,40 @@ namespace Microsoft.Xbox.Services.System
             }
         }
 
-        private SignInResult ConvertWebTokenRequestStatus(WebTokenRequestResult tokenResult)
+        private static SignInStatus ConvertWebTokenRequestStatus(WebTokenRequestStatus status)
         {
-            if (tokenResult.ResponseStatus == WebTokenRequestStatus.UserCancel)
+            switch (status)
             {
-                return new SignInResult(SignInStatus.UserCancel);
+                case WebTokenRequestStatus.Success:
+                    return SignInStatus.Success;
+                case WebTokenRequestStatus.UserCancel:
+                    return SignInStatus.UserCancel;
+                case WebTokenRequestStatus.UserInteractionRequired:
+                    return SignInStatus.UserInteractionRequired;
+                case WebTokenRequestStatus.AccountSwitch:
+                case WebTokenRequestStatus.AccountProviderNotAvailable:
+                case WebTokenRequestStatus.ProviderError:
+                    return SignInStatus.ProviderError;
+                default:
+                    throw new ArgumentOutOfRangeException("status");
             }
-            else
+        }
+
+        protected virtual void OnSignInCompleted()
+        {
+            var onSignInCompleted = this.SignInCompleted;
+            if (onSignInCompleted != null)
             {
-                return new SignInResult(SignInStatus.UserInteractionRequired);
+                onSignInCompleted(this, new EventArgs());
+            }
+        }
+
+        protected virtual void OnSignOutCompleted()
+        {
+            var onSignOutCompleted = this.SignOutCompleted;
+            if (onSignOutCompleted != null)
+            {
+                onSignOutCompleted(this, new EventArgs());
             }
         }
     }

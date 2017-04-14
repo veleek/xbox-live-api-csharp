@@ -75,6 +75,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Leaderboard\LeaderboardStatType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\IPrivacyService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Privacy\Models\PrivacySettingsRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Presence\PresenceTitleType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Shared\IXboxWebsocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\LeaderboardResultEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Stats\Manager\StatEventType.cs" />
@@ -207,7 +208,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialEventType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialGraph.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialGraphClasses.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialGraphState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Social\Manager\SocialManagerExtraDetailLevel.cs" />

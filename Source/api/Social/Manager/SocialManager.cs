@@ -15,12 +15,13 @@ namespace Microsoft.Xbox.Services.Social.Manager
         private static ISocialManager instance;
 
         private static readonly object instanceLock = new object();
-        private readonly Queue<SocialEvent> eventQueue = new Queue<SocialEvent>();
-        private readonly List<XboxLiveUser> localUsers = new List<XboxLiveUser>();
-
         private readonly object syncRoot = new object();
+
+        private readonly List<XboxLiveUser> localUsers = new List<XboxLiveUser>();
         private readonly Dictionary<XboxLiveUser, SocialGraph> userGraphs = new Dictionary<XboxLiveUser, SocialGraph>(new XboxUserIdEqualityComparer());
         private readonly Dictionary<XboxLiveUser, HashSet<WeakReference>> userGroupsMap = new Dictionary<XboxLiveUser, HashSet<WeakReference>>(new XboxUserIdEqualityComparer());
+
+        private Queue<SocialEvent> eventQueue = new Queue<SocialEvent>();
 
         private SocialManager()
         {
@@ -72,6 +73,8 @@ namespace Microsoft.Xbox.Services.Social.Manager
                     {
                         this.userGraphs[user] = graph;
                         this.localUsers.Add(user);
+
+                        this.eventQueue.Enqueue(new SocialEvent(SocialEventType.LocalUserAdded, user));
                     }
                 });
         }
@@ -84,41 +87,9 @@ namespace Microsoft.Xbox.Services.Social.Manager
             {
                 this.localUsers.Remove(user);
                 this.userGraphs.Remove(user);
+
+                this.eventQueue.Enqueue(new SocialEvent(SocialEventType.LocalUserRemoved, user));
             }
-        }
-
-        public IList<SocialEvent> DoWork()
-        {
-            // TODO make this threadsafe
-            List<SocialEvent> events = this.eventQueue.ToList();
-            this.eventQueue.Clear();
-
-            lock (this.syncRoot)
-            {
-                foreach (SocialGraph graph in this.userGraphs.Values)
-                {
-                    graph.DoWork(events);
-
-                    HashSet<WeakReference> userGroups;
-                    if (this.userGroupsMap.TryGetValue(graph.LocalUser, out userGroups))
-                    {
-                        // Graph the social groups for this user and update them.
-                        foreach (WeakReference groupReference in userGroups.ToList())
-                        {
-                            XboxSocialUserGroup group = groupReference.Target as XboxSocialUserGroup;
-                            if (group == null)
-                            {
-                                userGroups.Remove(groupReference);
-                                continue;
-                            }
-
-                            group.UpdateView(graph.ActiveBufferSocialGraph, events);
-                        }
-                    }
-                }
-            }
-
-            return events.ToList();
         }
 
         public XboxSocialUserGroup CreateSocialUserGroupFromFilters(XboxLiveUser user, PresenceFilter presenceFilter, RelationshipFilter relationshipFilter, uint titleId)
@@ -131,13 +102,15 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 throw new ArgumentException("You must add a local user before you can create a social group for them.", "user");
             }
 
-            XboxSocialUserGroup group = new XboxSocialUserGroup(user, presenceFilter, relationshipFilter, userGraph.TitleId);
+            XboxSocialUserGroup group = new XboxSocialUserGroup(user, presenceFilter, relationshipFilter, XboxLiveAppConfiguration.Instance.TitleId);
             if (userGraph.IsInitialized)
             {
                 group.InitializeGroup(userGraph.ActiveUsers);
             }
 
             this.AddUserGroup(user, group);
+
+            this.eventQueue.Enqueue(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, null, group));
 
             return group;
         }
@@ -163,12 +136,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
             userGraph.AddUsers(userIds).ContinueWith(addUsersTask =>
             {
-                if (!addUsersTask.IsFaulted)
-                {
-                    this.eventQueue.Enqueue(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, null, group) { Exception = addUsersTask.Exception });
-                }
-
-                this.eventQueue.Enqueue(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, userIds, group));
+                this.eventQueue.Enqueue(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, userIds, group, addUsersTask.Exception));
             });
 
             return group;
@@ -189,14 +157,58 @@ namespace Microsoft.Xbox.Services.Social.Manager
             }
         }
 
-        public void UpdateSocialUserGroup(XboxSocialUserGroup group, List<ulong> users)
+        public void UpdateUserGroup(XboxLiveUser user, XboxSocialUserGroup group, List<ulong> users)
         {
-            this.userGraphs[group.LocalUser].AddUsers(users).ContinueWith(
+            if (group.SocialUserGroupType != SocialUserGroupType.UserList)
+            {
+                throw new ArgumentException("You can only modify the user list for a UserList type social group.");
+            }
+
+            this.userGraphs[user].AddUsers(users).ContinueWith(
                 addUsersTask =>
                 {
-                    SocialEvent socialEvent = new SocialEvent(SocialEventType.SocialUserGroupUpdated, group.LocalUser, users);
+                    SocialEvent socialEvent = new SocialEvent(SocialEventType.SocialUserGroupUpdated, user, users);
                     this.eventQueue.Enqueue(socialEvent);
                 });
+        }
+
+        public IList<SocialEvent> DoWork()
+        {
+            Queue<SocialEvent> eventQueueSnapshot = this.eventQueue;
+            this.eventQueue = new Queue<SocialEvent>();
+
+            List<SocialEvent> events;
+            lock (this.syncRoot)
+            {
+                events = eventQueueSnapshot.ToList();
+                foreach (SocialGraph graph in this.userGraphs.Values)
+                {
+                    graph.DoWork(events);
+
+                    HashSet<WeakReference> userGroups;
+                    if (!this.userGroupsMap.TryGetValue(graph.LocalUser, out userGroups))
+                    {
+                        continue;
+                    }
+
+                    // Grab the social groups for this user and update them.
+                    foreach (WeakReference groupReference in userGroups.ToList())
+                    {
+                        XboxSocialUserGroup group = groupReference.Target as XboxSocialUserGroup;
+                        // If the target is null that means the group has been disposed so we don't 
+                        // need to bother updating it anymore.
+                        if (group == null)
+                        {
+                            userGroups.Remove(groupReference);
+                            continue;
+                        }
+
+                        group.UpdateView(graph.ActiveBufferSocialGraph, events);
+                    }
+                }
+            }
+
+            return events;
         }
 
         /// <summary>

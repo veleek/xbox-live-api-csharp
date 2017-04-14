@@ -15,7 +15,6 @@ namespace Microsoft.Xbox.Services.TitleStorage
     /// </summary>
     public class TitleStorageService: ITitleStorageService
     {
-        private readonly XboxLiveAppConfiguration appConfig;
         private static readonly Uri TitleStorageBaseUri = new Uri("https://titlestorage.xboxlive.com");
 
         private const string TitleStorageApiContract = "1";
@@ -27,15 +26,6 @@ namespace Microsoft.Xbox.Services.TitleStorage
         private const uint MaxUploadBlockSize = 4 * 1024 * 1024;
         private const uint MinUploadBlockSize = 1024;
         private const uint MinDownloadBlockSize = 1024;
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="TitleStorageService"/> class.
-        /// </summary>
-        /// <param name="appConfig">Xbox Live App Configuration</param>
-        public TitleStorageService()
-        {
-            this.appConfig = XboxLive.Instance.AppConfig;
-        }
 
         /// <summary>
         /// Gets title storage quota information for the specified service configuration and storage type.
@@ -66,9 +56,6 @@ namespace Microsoft.Xbox.Services.TitleStorage
         /// <returns>An instance of the <see cref="TitleStorageBlobMetadataResult"/> class containing the list of enumerated blob metadata objects.</returns>
         public Task<TitleStorageBlobMetadataResult> GetBlobMetadataAsync(XboxLiveUser user, TitleStorageType storageType, string blobPath,uint skipItems = 0, uint maxItems = 0)
         {
-            if (this.appConfig == null)
-                throw new Exception("App Config is null.");
-
             if (storageType == TitleStorageType.GlobalStorage && (user == null || !string.IsNullOrEmpty(user.XboxUserId)))
                 throw new Exception("Global Storage Type with a non-empty xbox user id");
             
@@ -304,8 +291,7 @@ namespace Microsoft.Xbox.Services.TitleStorage
                 response.ResponseBodyString, 
                 storageType, 
                 user,
-                blobPath
-                );
+                blobPath);
         }
 
         internal string GetTitleStorageSubpath(XboxLiveUser user, TitleStorageType titleStorageType)
@@ -319,12 +305,12 @@ namespace Microsoft.Xbox.Services.TitleStorage
                         "{0}/users/xuid({1})/scids/{2}",
                         titleStorageType.ToString().ToLowerInvariant(),
                         user.XboxUserId,
-                        this.appConfig.PrimaryServiceConfigId);
+                        XboxLive.Instance.AppConfig.PrimaryServiceConfigId);
                     break;
                 case TitleStorageType.GlobalStorage:
                     pathBuilder.AppendFormat(
                         "global/scids/{0}",
-                        this.appConfig.PrimaryServiceConfigId);
+                        XboxLive.Instance.AppConfig.PrimaryServiceConfigId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("titleStorageType");

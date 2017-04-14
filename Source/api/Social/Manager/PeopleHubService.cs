@@ -61,6 +61,12 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 .ContinueWith(responseTask =>
                 {
                     var response = responseTask.Result;
+
+                    if (response.HttpStatus != 200)
+                    {
+                        throw new XboxException("PeopleHub call failed with " + response.HttpStatus);
+                    }
+
                     JObject responseBody = JObject.Parse(response.ResponseBodyString);
                     List<XboxSocialUser> users = responseBody["people"].ToObject<List<XboxSocialUser>>();
                     return users[0];

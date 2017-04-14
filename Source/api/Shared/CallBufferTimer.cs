@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
-
 
 namespace Microsoft.Xbox.Services.Shared
 {
@@ -10,107 +8,162 @@ namespace Microsoft.Xbox.Services.Shared
     using global::System.Linq;
     using global::System.Threading.Tasks;
 
-    internal class CallBufferTimerCompletionContext
+    internal class CallBufferEventArgs<T> : EventArgs
     {
-        public int Context { get; private set; }
-        public int NumObjects { get; private set; }
-    }
-
-    internal class CallBufferReturnObject : EventArgs
-    {
-        public List<XboxLiveUser> UserList { get; private set; }
-        public CallBufferTimerCompletionContext CompletionContext { get; private set; }
-
-        public CallBufferReturnObject(List<XboxLiveUser> userList, CallBufferTimerCompletionContext context)
+        public CallBufferEventArgs(List<T> elements)
         {
-            this.UserList = userList;
-            this.CompletionContext = context;
+            this.Elements = elements;
         }
+
+        public List<T> Elements { get; private set; }
     }
 
-    internal class CallBufferTimer
+    /// <summary>
+    /// A helper class to throttle calls and buffer call data.  One or more calls made to <see cref="Fire"/> will be
+    /// batched together and passed as a single 
+    /// </summary>
+    internal class CallBufferTimer<T>
     {
-        private readonly TimeSpan duration;
-        private readonly List<XboxLiveUser> usersToCall = new List<XboxLiveUser>();
-        private readonly Dictionary<string, bool> usersToCallMap = new Dictionary<string, bool>();
-
-        private bool isTaskInProgress;
-        private bool isQueuedTask;
+        private readonly TimeSpan period;
         private DateTime previousTime;
-        private CallBufferTimerCompletionContext callBufferTimerCompletionContext;
 
-        public event EventHandler<CallBufferReturnObject> TimerCompleteEvent;
+        private readonly object elementBufferLock = new object();
+        private readonly HashSet<T> elementBuffer;
+        private TaskCompletionSource<bool> currentCompletionSource = new TaskCompletionSource<bool>();
 
-        public CallBufferTimer(TimeSpan duration)
+        /// <summary>
+        /// A lock around the current call to prevent multiple callers
+        /// </summary>
+        private readonly object callLock = new object();
+
+        /// <summary>
+        /// A task that represents the current call in progress.
+        /// </summary>
+        private Task inProgressTask = Task.FromResult(true);
+
+        public event EventHandler<CallBufferEventArgs<T>> Completed;
+
+        /// <summary>
+        /// Create a <see cref="CallBufferTimer{T}"/>
+        /// </summary>
+        /// <param name="period">The minimum duration between triggers of the <see cref="Completed"/> event.</param>
+        /// <param name="comparer">If not null, overrides the comparer used to compare elements in the buffer.</param>
+        public CallBufferTimer(TimeSpan period, IEqualityComparer<T> comparer = null)
         {
-            this.duration = duration;
+            this.period = period;
+            this.elementBuffer = new HashSet<T>(comparer);
         }
 
-        public void Fire()
+        public Task Fire(IList<T> elements)
         {
-            this.FireHelper();
-        }
-
-        public void Fire(List<XboxLiveUser> users, CallBufferTimerCompletionContext completionContext = null)
-        {
-            if (users == null)
+            if (elements == null)
             {
-                throw new ArgumentNullException("users");
+                throw new ArgumentNullException("elements");
             }
 
-            lock (this.usersToCall)
+            if (elements.Count == 0)
             {
-                this.callBufferTimerCompletionContext = completionContext;
-                foreach (XboxLiveUser user in users)
+                return Task.FromResult(true);
+            }
+
+            TaskCompletionSource<bool> tcs;
+            lock (this.elementBufferLock)
+            {
+                foreach (T user in elements)
                 {
-                    if (!this.usersToCallMap.ContainsKey(user.XboxUserId))
-                    {
-                        this.usersToCall.Add(user);
-                        this.usersToCallMap[user.XboxUserId] = true;
-                    }
+                    this.elementBuffer.Add(user);
                 }
+                // Grab the TCS associated with this buffer.  This will complete
+                // when all the elements in this buffer have been sent.
+                tcs = this.currentCompletionSource;
             }
 
-            Task.Run(() => { this.FireHelper(); });
+            this.FireHelper();
+
+            return tcs.Task;
         }
 
         private void FireHelper()
         {
-            if (!this.isTaskInProgress)
-            {
-                TimeSpan timeDiff = (this.duration - (DateTime.Now - this.previousTime));
-                if (timeDiff.TotalMilliseconds < 0)
-                {
-                    timeDiff = TimeSpan.Zero;
-                }
-                this.isTaskInProgress = true;
-                this.previousTime = DateTime.Now;
+            // If there's a call in progress, it will queue up a new 
+            // task once it's done so we can just return.
+            if (!this.inProgressTask.IsCompleted) return;
 
-                List<XboxLiveUser> userCopy;
-                lock (this.usersToCall)
+            TaskCompletionSource<bool> inProgressCompletionSource;
+
+            // Prevent multiple people from initiating calls at the same time.
+            lock (this.callLock)
+            {
+                if (!this.inProgressTask.IsCompleted) return;
+
+                // Grab the current completion source, and mark it as in-progress by
+                // setting it's task as the current in progress task.  Note that we 
+                // are not swapping out the completion source yet, which means that
+                // people can continue to queue elements into this buffer until we 
+                // actually execute this call.
+                inProgressCompletionSource = this.currentCompletionSource;
+                this.inProgressTask = inProgressCompletionSource.Task;
+            }
+
+            // Determine if we need to delay at all.
+            TimeSpan callDelay = this.period - (DateTime.Now - this.previousTime);
+            if (callDelay < TimeSpan.Zero) callDelay = TimeSpan.Zero;
+
+            // Yes, we will 'delay' for zero time in some cases, but without await
+            // it would be much uglier to handle both cases explicitly.
+            Task.Delay(callDelay).ContinueWith(continuationAction =>
+            {
+                if (continuationAction.IsFaulted)
                 {
-                    userCopy = this.usersToCall.ToList();
+                    inProgressCompletionSource.SetException(continuationAction.Exception);
+                    return;
                 }
-                var completionContext = this.callBufferTimerCompletionContext;
-                Task.Delay(timeDiff).ContinueWith((continuationAction) =>
+
+                // Copy the current buffer and TCS out and replace them with new ones.
+                // Anyone who attempts to add stuff to the buffer after this point will
+                // get a new TCS and as a result will wait until the next call occurs.
+                List<T> elements;
+                lock (this.elementBufferLock)
                 {
-                    this.isTaskInProgress = false;
-                    this.TimerCompleteEvent(this, new CallBufferReturnObject(userCopy, completionContext));
-                    if (this.isQueuedTask)
+                    inProgressCompletionSource = this.currentCompletionSource;
+                    this.currentCompletionSource = new TaskCompletionSource<bool>();
+
+                    elements = this.elementBuffer.ToList();
+                    this.elementBuffer.Clear();
+                }
+
+                this.inProgressTask = inProgressCompletionSource.Task;
+
+                if (elements.Count == 0)
+                {
+                    // No elements to request so complete immediately
+                    inProgressCompletionSource.SetResult(true);
+                    return;
+                }
+
+                try
+                {
+                    this.previousTime = DateTime.Now;
+
+                    this.OnCompleted(new CallBufferEventArgs<T>(elements));
+                    inProgressCompletionSource.SetResult(true);
+
+                    if (this.elementBuffer.Count > 0)
                     {
-                        this.isQueuedTask = false;
                         this.FireHelper();
                     }
-                });
+                }
+                catch (Exception e)
+                {
+                    inProgressCompletionSource.SetException(e);
+                }
+            });
+        }
 
-                this.usersToCall.Clear();
-                this.usersToCallMap.Clear();
-                this.callBufferTimerCompletionContext = null;
-            }
-            else
-            {
-                this.isQueuedTask = true;
-            }
+        protected virtual void OnCompleted(CallBufferEventArgs<T> e)
+        {
+            var handler = this.Completed;
+            if (handler != null) handler(this, e);
         }
     }
 }

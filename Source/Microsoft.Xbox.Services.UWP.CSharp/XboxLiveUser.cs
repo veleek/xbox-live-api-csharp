@@ -8,25 +8,32 @@ namespace Microsoft.Xbox.Services
 
     public partial class XboxLiveUser
     {
-        public XboxLiveUser()
+        public XboxLiveUser() : this(null)
         {
-            this.userImpl = new UserImpl(SignInCompleted, SignOutCompleted, null, this);
         }
 
         public XboxLiveUser(Windows.System.User systemUser)
         {
-            this.userImpl = new UserImpl(SignInCompleted, SignOutCompleted, systemUser, this);
+            var user = new UserImpl(systemUser);
+
+            // The UserImpl monitors the underlying system for sign out events
+            // and notifies us that a user has been signed out.  We can then
+            // pass that event on the application with a concrete reference.
+            user.SignInCompleted += (sender, args) =>
+            {
+                OnSignInCompleted(this);
+            };
+            user.SignOutCompleted += (sender, args) =>
+            {
+                OnSignOutCompleted(this);
+            };
+
+            this.userImpl = user;
         }
 
         public Task RefreshToken()
         {
-            return this.userImpl.InternalGetTokenAndSignatureAsync("GET", this.userImpl.AuthConfig.XboxLiveEndpoint, null, null, false, true).ContinueWith((taskAndSignatureResultTask) =>
-            {
-                if (taskAndSignatureResultTask.Exception != null)
-                {
-                    throw taskAndSignatureResultTask.Exception;
-                }
-            });
+            return this.userImpl.InternalGetTokenAndSignatureAsync("GET", this.userImpl.AuthConfig.XboxLiveEndpoint, null, null, false, true);
         }
 
         public Windows.System.User SystemUser

@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
+
 namespace Microsoft.Xbox.Services.Social.Manager
 {
     using global::System;
@@ -10,10 +10,8 @@ namespace Microsoft.Xbox.Services.Social.Manager
     using global::System.Threading;
     using global::System.Threading.Tasks;
 
-    using Microsoft.Xbox.Services;
     using Microsoft.Xbox.Services.Presence;
     using Microsoft.Xbox.Services.RealTimeActivity;
-    using Microsoft.Xbox.Services.System;
 
     internal class SocialGraph : IDisposable
     {
@@ -24,8 +22,8 @@ namespace Microsoft.Xbox.Services.Social.Manager
         private readonly XboxLiveUser localUser;
         private readonly SocialManagerExtraDetailLevel detailLevel;
 
-        private readonly EventQueue eventQueue;
-        private readonly InternalEventQueue internalEventQueue;
+        private readonly InternalEventQueue internalEventQueue = new InternalEventQueue();
+        private EventQueue eventQueue = new EventQueue();
         private UserBuffersHolder userBuffer;
 
         private SocialGraphState socialGraphState;
@@ -38,14 +36,9 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
         private readonly ReaderWriterLockSlim refreshLock = new ReaderWriterLockSlim();
 
-        //Action<real_time_activity_connection_state> m_stateRTAFunction;
-        //Dictionary<UInt64, XboxSocialUserSubscriptions> m_socialUserSubscriptions;
-        //RtaTriggerTimer m_presenceRefreshTimer;
-        //RtaTriggerTimer m_presencePollingTimer;
-        //RtaTriggerTimer m_socialGraphRefreshTimer;
-        //RtaTriggerTimer m_resyncRefreshTimer;
-        //xbox::services::social::social_relationship_change_subscription m_socialRelationshipChangeSubscription;
+        // TODO: Move this into a more generic spot so we don't create an instance per user.
         private PeopleHubService peopleHubService;
+
         private bool disposed;
 
         public SocialGraph(XboxLiveUser localUser, SocialManagerExtraDetailLevel detailLevel)
@@ -54,8 +47,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             this.detailLevel = detailLevel;
 
             this.peopleHubService = new PeopleHubService();
-            this.eventQueue = new EventQueue(this.localUser);
-            this.internalEventQueue = new InternalEventQueue();
         }
 
         public bool IsInitialized { get; private set; }
@@ -65,14 +56,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             get
             {
                 return this.localUser;
-            }
-        }
-
-        public uint TitleId
-        {
-            get
-            {
-                return XboxLive.Instance.AppConfig.TitleId;
             }
         }
 
@@ -112,7 +95,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
                 this.userBuffer = new UserBuffersHolder(users);
 
-
                 // Kickoff the background tasks.
                 this.backgroundTaskCancellationTokenSource = new CancellationTokenSource();
                 this.RefreshGraphAsync(this.backgroundTaskCancellationTokenSource.Token);
@@ -151,7 +133,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
         /// </summary>
         /// <param name="events"></param>
         /// <returns>A list of users affected by the processed events.</returns>
-        public Dictionary<ulong, XboxSocialUser> DoWork(List<SocialEvent> events)
+        public void DoWork(List<SocialEvent> events)
         {
             this.refreshLock.EnterWriteLock();
             try
@@ -162,18 +144,13 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 {
                     this.userBuffer.SwapIfEmpty();
 
-                    if (this.eventQueue.Count > 0)
-                    {
-                        foreach (SocialEvent socialEvent in this.eventQueue)
-                        {
-                            events.Add(socialEvent);
-                        }
+                    EventQueue currentQueue = Interlocked.CompareExchange(ref this.eventQueue, new EventQueue(), this.eventQueue);
 
-                        this.eventQueue.Clear();
+                    if (currentQueue.Count > 0)
+                    {
+                        events.AddRange(currentQueue);
                     }
                 }
-
-                return this.userBuffer.Active.SocialUserGraph;
             }
             finally
             {
@@ -185,7 +162,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
         {
             bool wasEnabled = this.isPollingRichPresence;
             this.isPollingRichPresence = shouldEnablePolling;
-
 
             if (wasEnabled)
             {
@@ -211,7 +187,6 @@ namespace Microsoft.Xbox.Services.Social.Manager
             {
                 return;
             }
-
 
             this.peopleHubService.GetSocialGraph(this.localUser, this.detailLevel)
                 .ContinueWith(t =>
@@ -327,7 +302,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 this.socialGraphState = SocialGraphState.Diff;
 
                 List<XboxSocialUser> usersAddedList = new List<XboxSocialUser>();
-                List<ulong> usersRemovedList = new List<ulong>();
+                List<XboxSocialUser> usersRemovedList = new List<XboxSocialUser>();
                 List<XboxSocialUser> presenceChangeList = new List<XboxSocialUser>();
                 List<XboxSocialUser> socialRelationshipChangeList = new List<XboxSocialUser>();
                 List<XboxSocialUser> profileChangeList = new List<XboxSocialUser>();
@@ -367,7 +342,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
                     if (!xboxSocialUsers.Contains(socialUser, XboxSocialUserIdEqualityComparer.Instance))
                     {
-                        usersRemovedList.Add(socialUser.XboxUserId);
+                        usersRemovedList.Add(socialUser);
                     }
                 }
 
@@ -415,17 +390,17 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 }
                 case InternalSocialEventType.UsersRemoved:
                 {
-                    this.ApplyUsersRemovedEvent(internalEvent, inactiveBuffer, isFreshEvent);
+                    this.ApplyUsersRemovedEvent(internalEvent, isFreshEvent);
                     break;
                 }
                 case InternalSocialEventType.DevicePresenceChanged:
                 {
-                    this.ApplyDevicePresenceChangedEvent(internalEvent, inactiveBuffer, isFreshEvent);
+                    this.ApplyDevicePresenceChangedEvent(internalEvent, isFreshEvent);
                     break;
                 }
                 case InternalSocialEventType.TitlePresenceChanged:
                 {
-                    this.ApplyTitlePresenceChangedEvent(internalEvent, inactiveBuffer, isFreshEvent);
+                    this.ApplyTitlePresenceChangedEvent(internalEvent, isFreshEvent);
                     break;
                 }
                 case InternalSocialEventType.PresenceChanged:
@@ -498,38 +473,35 @@ namespace Microsoft.Xbox.Services.Social.Manager
                 {
                     //setup_device_and_presence_subscriptions(usersList);
 
-                    InternalSocialEvent internalEvent = new InternalSocialEvent(InternalSocialEventType.UsersAdded, usersToAdd);
-                    this.internalEventQueue.Enqueue(internalEvent);
+                    this.internalEventQueue.Enqueue(InternalSocialEventType.UsersAdded, usersToAdd);
                 }
             }
 
             if (usersToChange.Count > 0 && isFreshEvent)
             {
-                InternalSocialEvent internalEvent = new InternalSocialEvent(InternalSocialEventType.ProfilesChanged, usersToChange);
-                this.internalEventQueue.Enqueue(internalEvent);
+                this.internalEventQueue.Enqueue(InternalSocialEventType.ProfilesChanged, usersToChange);
             }
         }
 
-        private void ApplyUsersRemovedEvent(InternalSocialEvent socialEvent, UserBuffer inactiveBuffer, bool isFreshEvent)
+        private void ApplyUsersRemovedEvent(InternalSocialEvent socialEvent, bool isFreshEvent)
         {
             this.userBuffer.Inactive.Enqueue(socialEvent);
             foreach (XboxSocialUser user in socialEvent.UsersAffected)
             {
-                
             }
         }
 
-        private void ApplyDevicePresenceChangedEvent(InternalSocialEvent socialEvent, UserBuffer inactiveBuffer, bool isFreshEvent)
+        private void ApplyDevicePresenceChangedEvent(InternalSocialEvent socialEvent, bool isFreshEvent)
         {
             throw new NotImplementedException();
         }
 
-        private void ApplyTitlePresenceChangedEvent(InternalSocialEvent socialEvent, UserBuffer inactiveBuffer, bool isFreshEvent)
+        private void ApplyTitlePresenceChangedEvent(InternalSocialEvent socialEvent, bool isFreshEvent)
         {
             var titlePresenceChanged = socialEvent.TitlePresenceArgs;
             var xuid = Convert.ToUInt64(titlePresenceChanged.XboxUserId);
 
-            var eventUser = inactiveBuffer.SocialUserGraph[xuid];
+            var eventUser = this.userBuffer.Inactive.SocialUserGraph[xuid];
             if (eventUser != null)
             {
                 if (titlePresenceChanged.TitleState == TitlePresenceState.Ended)

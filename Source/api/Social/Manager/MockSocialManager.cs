@@ -14,9 +14,11 @@ namespace Microsoft.Xbox.Services.Social.Manager
     public class MockSocialManager : ISocialManager
     {
         private static Random rng = new Random();
+        private List<SocialEvent> events;
 
         internal MockSocialManager()
         {
+            this.events = new List<SocialEvent>();
             this.LocalUsers = new List<XboxLiveUser>();
         }
 
@@ -25,6 +27,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
         public Task AddLocalUser(XboxLiveUser user, SocialManagerExtraDetailLevel extraDetailLevel)
         {
             this.LocalUsers.Add(user);
+            this.events.Add(new SocialEvent(SocialEventType.LocalUserAdded, user, null));
             return Task.FromResult(true);
         }
 
@@ -41,7 +44,10 @@ namespace Microsoft.Xbox.Services.Social.Manager
             var users = userIds
                 .Select(CreateUser)
                 .ToDictionary(u => u.XboxUserId);
-            group.UpdateView(users, null);
+
+            group.InitializeGroup(users.Values);
+            group.UpdateView(users, new List<SocialEvent>());
+            this.events.Add(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, null, group));
 
             return group;
         }
@@ -53,7 +59,7 @@ namespace Microsoft.Xbox.Services.Social.Manager
             var users = Enumerable.Range(0, 5)
                 .Select(id =>
                 {
-                    var groupUser = CreateUser(0);
+                    var groupUser = CreateUser();
 
                     switch (presenceFilter)
                     {
@@ -99,14 +105,19 @@ namespace Microsoft.Xbox.Services.Social.Manager
 
                     return groupUser;
                 }).ToDictionary(u => u.XboxUserId);
+
+            group.InitializeGroup(users.Values);
             group.UpdateView(users, new List<SocialEvent>());
+            this.events.Add(new SocialEvent(SocialEventType.SocialUserGroupLoaded, user, null, group));
 
             return group;
         }
 
         public IList<SocialEvent> DoWork()
         {
-            return new List<SocialEvent>();
+            List<SocialEvent> currentEvents = this.events;
+            this.events = new List<SocialEvent>();
+            return currentEvents;
         }
 
         private static XboxSocialUser CreateUser(ulong id = 0)
