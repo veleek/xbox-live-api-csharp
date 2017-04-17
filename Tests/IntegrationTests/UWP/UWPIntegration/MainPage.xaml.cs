@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-// 
 
 namespace UWPIntegration
 {
@@ -9,11 +8,9 @@ namespace UWPIntegration
 
     using Windows.UI.Xaml;
     using Windows.UI.Xaml.Controls;
-
-    using Microsoft.Xbox;
     using Microsoft.Xbox.Services;
+    using Microsoft.Xbox.Services.System;
     using Microsoft.Xbox.Services.Leaderboard;
-    using Microsoft.Xbox.Services.Social.Manager;
     using Microsoft.Xbox.Services.Stats.Manager;
     using System.Collections.Generic;
     using System.ComponentModel;
@@ -123,6 +120,24 @@ namespace UWPIntegration
             if (this.LeaderboardResult.HasNext)
             {
                 this.StatsManager.GetLeaderboard(this.User, this.LeaderboardResult.NextQuery);
+            }
+        }
+
+        private void ShowProfileCard_Click(object sender, RoutedEventArgs e)
+        {
+            TitleCallableUI.ShowProfileCardUIAsync(this.User, "2814613569642996");
+        }
+
+        private async void CheckPrivilege_Click(object sender, RoutedEventArgs e)
+        {
+            // If you want to see the dialog, change your privacy settings to block 
+            // multilayer sessions for this account on the console
+
+            var checkPermission = TitleCallableUI.CheckPrivilegeSilently(this.User, GamingPrivilege.MultiplayerSessions);
+            if (!checkPermission)
+            {
+                // Show UI if CheckPrivilegeSilently fails.
+                var result = await TitleCallableUI.CheckPrivilegeWithUIAsync(this.User, GamingPrivilege.MultiplayerSessions, "");
             }
         }
 

@@ -13,6 +13,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -64,5 +65,14 @@
             </StackPanel>
             <TextBlock x:Name="StatsData" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="150" Margin="4"/>
         </StackPanel>
+
+        <StackPanel Grid.Row="3" Margin="4">
+            <TextBlock Text="TCUI APIs" Margin="4" FontWeight="Bold"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Show Profile Card UI" VerticalAlignment="Top" Click="ShowProfileCard_Click" Margin="4"/>
+                <Button Content="Check Privilege" VerticalAlignment="Top" Click="CheckPrivilege_Click" Margin="4"/>
+            </StackPanel>
+        </StackPanel>
+
     </Grid>
 </Page>
